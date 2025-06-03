@@ -87,10 +87,51 @@ def is_valid_price(price: str) -> bool:
 def get_headers() -> Dict[str, str]:
     """Zwraca nagłówki dla requestów"""
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
         "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Accept-Encoding": "gzip, deflate, br",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Cache-Control": "max-age=0"
     }
+
+def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Optional[requests.Response]:
+    """Wykonuje request z obsługą błędów i ponownych prób"""
+    headers = get_headers()
+    session = requests.Session()
+    
+    for attempt in range(max_retries):
+        try:
+            response = session.get(
+                url,
+                headers=headers,
+                timeout=30,
+                allow_redirects=True
+            )
+            
+            if response.status_code == 403:
+                logging.warning(f"Dostęp zabroniony (403) - próba {attempt + 1}/{max_retries}")
+                if attempt < max_retries - 1:
+                    time.sleep(retry_delay * (attempt + 1))
+                    continue
+            
+            response.raise_for_status()
+            return response
+            
+        except requests.RequestException as e:
+            logging.error(f"Błąd podczas wykonywania requestu (próba {attempt + 1}/{max_retries}): {str(e)}")
+            if attempt < max_retries - 1:
+                time.sleep(retry_delay * (attempt + 1))
+            else:
+                logging.error(f"Nie udało się pobrać strony po {max_retries} próbach")
+                return None
+    
+    return None
 
 def get_next_page_url(current_url: str, page_number: int) -> str:
     """Generuje URL dla następnej strony"""
@@ -114,8 +155,10 @@ def extract_text_from_element(soup: BeautifulSoup, selector: str, attribute: str
 def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
     """Parsuje szczegóły ogłoszenia"""
     try:
-        response = requests.get(url, headers=get_headers())
-        response.raise_for_status()
+        response = make_request(url)
+        if not response:
+            return None
+            
         soup = BeautifulSoup(response.text, 'html.parser')
         
         # Ekstrakcja ID ogłoszenia najpierw
@@ -124,13 +167,13 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         
         # Sprawdź czy ID istnieje w cache
         if ad_id in existing_ad_ids:
-            print(f"Ogłoszenie {ad_id} już istnieje w bazie. Pomijam.")
+            logging.info(f"Ogłoszenie {ad_id} już istnieje w bazie. Pomijam.")
             return None
             
         # Ekstrakcja ceny
         price = extract_text_from_element(soup, "strong[data-cy='adPageHeaderPrice']")
         if not is_valid_price(price):
-            print(f"Nieprawidłowa cena dla ogłoszenia {ad_id}. Pomijam.")
+            logging.info(f"Nieprawidłowa cena dla ogłoszenia {ad_id}. Pomijam.")
             return None
         
         # Ekstrakcja pozostałych danych
@@ -169,7 +212,7 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
             "url": url
         }
     except Exception as e:
-        print(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
+        logging.error(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
         return None
 
 def get_current_date() -> str:
@@ -203,22 +246,36 @@ def save_to_notion(listing_data: Dict[str, Any]) -> None:
 def get_listing_links(page_url: str) -> List[str]:
     """Pobiera linki do ogłoszeń z danej strony"""
     try:
-        response = requests.get(page_url, headers=get_headers())
-        response.raise_for_status()
+        response = make_request(page_url)
+        if not response:
+            logging.error(f"Nie udało się pobrać strony: {page_url}")
+            return []
+            
         soup = BeautifulSoup(response.text, 'html.parser')
         
         links = []
         listing_cards = soup.select("a[data-cy='listing-item-link']")
         
+        if not listing_cards:
+            logging.warning(f"Nie znaleziono elementów ogłoszeń na stronie. Sprawdzanie alternatywnego selektora...")
+            # Spróbuj alternatywny selektor
+            listing_cards = soup.select("a[href*='/oferta/']")
+        
         for card in listing_cards:
             href = card.get('href')
-            if href:
+            if href and '/oferta/' in href:
                 full_url = urljoin(BASE_URL, href)
                 links.append(full_url)
         
+        if not links:
+            logging.warning("Nie znaleziono żadnych linków do ogłoszeń")
+            logging.debug(f"HTML strony: {response.text[:500]}...")
+        else:
+            logging.info(f"Znaleziono {len(links)} linków do ogłoszeń")
+            
         return links
     except Exception as e:
-        print(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
+        logging.error(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
         return []
 
 def scrape_listings():
