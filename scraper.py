@@ -105,7 +105,7 @@ def get_headers() -> Dict[str, str]:
     """Zwraca nagłówki dla requestów z losowym User-Agent"""
     return {
         "User-Agent": ua.random,
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
         "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
@@ -114,44 +114,50 @@ def get_headers() -> Dict[str, str]:
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0",
+        "Cache-Control": "no-cache",
+        "Pragma": "no-cache",
         "DNT": "1",
         "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120"',
         "Sec-Ch-Ua-Mobile": "?0",
-        "Sec-Ch-Ua-Platform": '"Windows"'
+        "Sec-Ch-Ua-Platform": '"Windows"',
+        "Referer": "https://www.otodom.pl/"
     }
+
+def create_scraper_session() -> cloudscraper.CloudScraper:
+    """Tworzy nową sesję CloudScraper z losowymi parametrami"""
+    return cloudscraper.create_scraper(
+        browser={
+            'browser': random.choice(['chrome', 'firefox']),
+            'platform': 'windows',
+            'mobile': False
+        },
+        debug=True
+    )
 
 def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Optional[requests.Response]:
     """Wykonuje request z obsługą błędów i ponownych prób"""
-    scraper = cloudscraper.create_scraper(
-        browser={
-            'browser': 'chrome',
-            'platform': 'windows',
-            'mobile': False
-        }
-    )
+    scraper = create_scraper_session()
     
     for attempt in range(max_retries):
         try:
-            headers = get_headers()
-            proxy = get_random_proxy()
-            
             # Dodaj losowe opóźnienie przed requestem
             time.sleep(random.uniform(2, 5))
             
+            headers = get_headers()
             response = scraper.get(
                 url,
                 headers=headers,
-                proxies=proxy,
                 timeout=30,
                 allow_redirects=True
             )
             
             if response.status_code == 403:
                 logging.warning(f"Dostęp zabroniony (403) - próba {attempt + 1}/{max_retries}")
-                if attempt < max_retries - 1:
-                    time.sleep(retry_delay * (attempt + 1))
-                    continue
+                # Zwiększ opóźnienie przy kolejnych próbach
+                time.sleep(retry_delay * (attempt + 2))
+                # Stwórz nową sesję
+                scraper = create_scraper_session()
+                continue
             
             response.raise_for_status()
             return response
@@ -159,7 +165,9 @@ def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Option
         except Exception as e:
             logging.error(f"Błąd podczas wykonywania requestu (próba {attempt + 1}/{max_retries}): {str(e)}")
             if attempt < max_retries - 1:
-                time.sleep(retry_delay * (attempt + 1))
+                time.sleep(retry_delay * (attempt + 2))
+                # Stwórz nową sesję przy błędzie
+                scraper = create_scraper_session()
             else:
                 logging.error(f"Nie udało się pobrać strony po {max_retries} próbach")
                 return None
