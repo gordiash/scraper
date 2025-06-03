@@ -38,22 +38,39 @@ jobs:
         if [ -n "${{ secrets.NOTION_API_KEY }}" ]; then echo "NOTION_API_KEY length: ${#NOTION_API_KEY}"; else echo "NOTION_API_KEY is not set"; fi
         echo "Checking if NOTION_DATABASE_ID is set (length only):"
         if [ -n "${{ secrets.NOTION_DATABASE_ID }}" ]; then echo "NOTION_DATABASE_ID length: ${#NOTION_DATABASE_ID}"; else echo "NOTION_DATABASE_ID is not set"; fi
+        echo "Installed packages:"
+        pip freeze
       
     - name: Run scraper with debug output
       run: |
         echo "Starting scraper..."
-        python -u scraper.py
+        python -u scraper.py 2>&1 | tee scraper_output.log
       env:
         NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         PYTHONUNBUFFERED: 1
+        
+    - name: Upload logs
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: scraper-logs
+        path: |
+          scraper.log
+          scraper_output.log
+          debug_*.html
       
     - name: Handle errors
       if: failure()
       run: |
         echo "Scraper failed to run properly"
         echo "Checking logs for errors:"
-        if [ -f "error.log" ]; then
-          cat error.log
+        if [ -f "scraper.log" ]; then
+          echo "=== scraper.log ==="
+          cat scraper.log
+        fi
+        if [ -f "scraper_output.log" ]; then
+          echo "=== scraper_output.log ==="
+          cat scraper_output.log
         fi
         exit 1 

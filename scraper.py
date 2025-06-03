@@ -198,13 +198,20 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
     try:
         response = make_request(url)
         if not response:
+            logging.error(f"❌ Nie udało się pobrać strony: {url}")
             return None
             
+        logging.info(f"✅ Pobrano stronę: {url}")
+        logging.info(f"Status code: {response.status_code}")
+        logging.info(f"Content length: {len(response.text)}")
+        
         soup = BeautifulSoup(response.text, 'html5lib')
         
         # Debug - zapisz HTML do pliku
-        with open('debug_listing.html', 'w', encoding='utf-8') as f:
+        debug_file = 'debug_listing.html'
+        with open(debug_file, 'w', encoding='utf-8') as f:
             f.write(response.text)
+        logging.info(f"✅ Zapisano HTML do pliku {debug_file}")
             
         logging.info(f"Parsowanie ogłoszenia z URL: {url}")
 
@@ -218,15 +225,17 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
                     "div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')",
                     "div[data-testid='ad.top-information.table'] div:-soup-contains('Powierzchnia')",
                     "div.css-1k13n9p div:-soup-contains('Powierzchnia')",
-                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Powierzchnia')"
+                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Powierzchnia')",
+                    "div.css-1qzl8qx",
+                    "div.css-1k13n9p"
                 ],
                 'value_selectors': [
                     "p[data-sentry-element='Item'].esen0m92.css-1airkmu + p.esen0m92.css-1airkmu",
-                    "p.esen0m92.css-1airkmu:last-child",
-                    "p.css-1airkmu:last-child",
                     "div.css-1wi2w6s",
                     "span.css-1wi2w6s",
-                    "strong"
+                    "strong",
+                    ".css-1wi2w6s",
+                    ".css-1airkmu"
                 ]
             },
             'rooms': {
@@ -234,15 +243,17 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
                     "div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')",
                     "div[data-testid='ad.top-information.table'] div:-soup-contains('Liczba pokoi')",
                     "div.css-1k13n9p div:-soup-contains('Liczba pokoi')",
-                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Liczba pokoi')"
+                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Liczba pokoi')",
+                    "div.css-1qzl8qx",
+                    "div.css-1k13n9p"
                 ],
                 'value_selectors': [
                     "p[data-sentry-element='Item'].esen0m92.css-1airkmu + p.esen0m92.css-1airkmu",
-                    "p.esen0m92.css-1airkmu:last-child",
-                    "p.css-1airkmu:last-child",
                     "div.css-1wi2w6s",
                     "span.css-1wi2w6s",
-                    "strong"
+                    "strong",
+                    ".css-1wi2w6s",
+                    ".css-1airkmu"
                 ]
             },
             'market': {
@@ -250,240 +261,117 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
                     "div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')",
                     "div[data-testid='ad.top-information.table'] div:-soup-contains('Rynek')",
                     "div.css-1k13n9p div:-soup-contains('Rynek')",
-                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Rynek')"
+                    "div[data-cy='adPageAdInfo'] div:-soup-contains('Rynek')",
+                    "div.css-1qzl8qx",
+                    "div.css-1k13n9p"
                 ],
                 'value_selectors': [
                     "p[data-sentry-element='Item'].esen0m92.css-1airkmu + p.esen0m92.css-1airkmu",
-                    "p.esen0m92.css-1airkmu:last-child",
-                    "p.css-1airkmu:last-child",
                     "div.css-1wi2w6s",
                     "span.css-1wi2w6s",
-                    "strong"
+                    "strong",
+                    ".css-1wi2w6s",
+                    ".css-1airkmu"
                 ]
             }
         }
 
         # Najpierw próbujemy znaleźć wartości używając ogólnych selektorów
         for field, field_config in selectors.items():
-            if field not in details or not details[field]:
-                for container_selector in field_config['containers']:
-                    try:
-                        containers = soup.select(container_selector)
-                        for container in containers:
-                            if container:
-                                container_text = clean_text(container.get_text())
-                                logging.info(f"Znaleziono kontener dla {field}: {container_selector}")
-                                logging.info(f"Tekst kontenera: {container_text}")
-                                
-                                # Próbujemy znaleźć wartość bezpośrednio w kontenerze
-                                if container_text:
-                                    if field == 'area':
-                                        area_match = re.search(r'(\d+[.,]?\d*)\s*m[²2]', container_text)
-                                        if area_match:
-                                            area_value = float(area_match.group(1).replace(',', '.'))
-                                            if area_value > 0:
-                                                details[field] = f"{area_value:.1f} m²"
-                                                logging.info(f"Znaleziono powierzchnię: {details[field]}")
-                                                break
-                                    elif field == 'rooms':
-                                        rooms_match = re.search(r'(\d+)\s*(?:pok|pokoi|pokoje)?', container_text)
-                                        if rooms_match:
-                                            rooms_value = int(rooms_match.group(1))
-                                            if 0 < rooms_value <= 10:
-                                                details[field] = str(rooms_value)
-                                                logging.info(f"Znaleziono liczbę pokoi: {details[field]}")
-                                                break
-                                    elif field == 'market':
-                                        market_match = re.search(r'(wtórny|pierwotny)', container_text.lower())
-                                        if market_match:
-                                            details[field] = market_match.group(1)
-                                            logging.info(f"Znaleziono rynek: {details[field]}")
-                                            break
-                                        elif "deweloper" in container_text.lower():
-                                            details[field] = "pierwotny"
-                                            logging.info(f"Znaleziono rynek (deweloper): {details[field]}")
-                                            break
-                                
-                                # Jeśli nie znaleziono wartości bezpośrednio, próbujemy użyć selektorów wartości
-                                for value_selector in field_config['value_selectors']:
-                                    try:
-                                        value_elements = container.select(value_selector)
-                                        for value_element in value_elements:
-                                            if value_element:
-                                                value = clean_text(value_element.text)
-                                                logging.info(f"Znaleziono wartość dla {field}: {value}")
-                                                
-                                                if field == 'area':
-                                                    area_match = re.search(r'(\d+[.,]?\d*)\s*m[²2]', value)
-                                                    if area_match:
-                                                        area_value = float(area_match.group(1).replace(',', '.'))
-                                                        if area_value > 0:
-                                                            details[field] = f"{area_value:.1f} m²"
-                                                            break
-                                                elif field == 'rooms':
-                                                    rooms_match = re.search(r'(\d+)\s*(?:pok|pokoi|pokoje)?', value)
-                                                    if rooms_match:
-                                                        rooms_value = int(rooms_match.group(1))
-                                                        if 0 < rooms_value <= 10:
-                                                            details[field] = str(rooms_value)
-                                                            logging.info(f"Znaleziono liczbę pokoi: {details[field]}")
-                                                            break
-                                                elif field == 'market':
-                                                    market_match = re.search(r'(wtórny|pierwotny)', value.lower())
-                                                    if market_match:
-                                                        details[field] = market_match.group(1)
-                                                        break
-                                                    elif "deweloper" in value.lower():
-                                                        details[field] = "pierwotny"
-                                                        break
-                                    except Exception as e:
-                                        logging.debug(f"Błąd przy próbie użycia selektora {value_selector}: {str(e)}")
-                                        continue
-                            
-                            if field in details:
-                                break
-                    except Exception as e:
-                        logging.debug(f"Błąd przy próbie użycia selektora kontenera {container_selector}: {str(e)}")
-                        continue
-                    
-                    if field in details:
-                        break
-
-        # 2. Próba: Szukanie w opisie ogłoszenia
-        description = ""
-        desc_selectors = [
-            "div[data-cy='adPageDescription']",
-            "div[data-testid='ad.description']"
-        ]
-        
-        for selector in desc_selectors:
-            desc_elem = soup.select_one(selector)
-            if desc_elem:
-                description = clean_text(desc_elem.get_text(strip=True)).lower()
-                break
-
-        if description:
-            # Szukaj powierzchni w opisie
-            if not details.get("area"):
-                area_matches = re.finditer(r'(\d+(?:[,.]\d+)?)\s*m[²2]', description)
-                for match in area_matches:
-                    area = match.group(0)
-                    if float(re.sub(r'[^\d.,]', '', area).replace(',', '.')) > 10:  # Sprawdź czy powierzchnia jest sensowna
-                        details["area"] = area
-                        logging.info(f"Znaleziono powierzchnię w opisie: {area}")
-                        break
-
-            # Szukaj liczby pokoi w opisie
-            if not details.get("rooms"):
-                rooms_matches = re.finditer(r'(\d+)[\s-]?(?:pok|pokoj|pokoje|pokoi)', description)
-                for match in rooms_matches:
-                    rooms = match.group(1)
-                    if 1 <= int(rooms) <= 10:  # Sprawdź czy liczba pokoi jest sensowna
-                        details["rooms"] = f"{rooms} pokoje"
-                        logging.info(f"Znaleziono liczbę pokoi w opisie: {rooms}")
-                        break
-
-        # 3. Próba: Szukanie w tytule
-        title = ""
-        title_selectors = [
-            "h1.css-1wnihf5",
-            "[data-cy='adPageAdTitle']",
-            "h1[data-cy='adPageAdTitle']",
-            "div.css-1wnihf5 h1"
-        ]
-        
-        for selector in title_selectors:
-            element = soup.select_one(selector)
-            if element:
-                title = clean_text(element.get_text(strip=True))
-                logging.info(f"Znaleziono tytuł używając selektora: {selector}")
-                logging.info(f"Tytuł: {title}")
-                break
-
-        if title:
-            # Szukaj powierzchni w tytule
-            if not details.get("area"):
-                area_match = re.search(r'(\d+(?:[,.]\d+)?)\s*m[²2]', title.lower())
-                if area_match:
-                    details["area"] = area_match.group(0)
-                    logging.info(f"Znaleziono powierzchnię w tytule: {details['area']}")
-
-            # Szukaj liczby pokoi w tytule
-            if not details.get("rooms"):
-                rooms_match = re.search(r'(\d+)\s*(?:pok|pokoi|pokoje)', title.lower())
-                if rooms_match:
-                    rooms = rooms_match.group(1)
-                    if 1 <= int(rooms) <= 10:
-                        details["rooms"] = f"{rooms} pokoje"
-                        logging.info(f"Znaleziono liczbę pokoi w tytule: {details['rooms']}")
-
-        # Ekstrakcja ID ogłoszenia
-        ad_id = ""
-        ad_id_selectors = [
-            "[data-cy='adPageAdId']",
-            "p[data-sentry-element='DetailsProperty']",
-            "[data-testid='ad-id']",
-            "div.css-1k13n9p"
-        ]
-        
-        for selector in ad_id_selectors:
-            element = soup.select_one(selector)
-            if element:
-                logging.info(f"Znaleziono element ID używając selektora: {selector}")
-                text = element.get_text(strip=True)
-                if ":" in text:
-                    ad_id = text.split(":")[-1].strip()
-                else:
-                    ad_id = text.strip()
-                if ad_id:
-                    break
-        
-        if not ad_id:
-            # Próbuj wyciągnąć ID z URL
-            ad_id = url.split('/')[-1].split('.')[0]
-            logging.info(f"Wyciągnięto ID z URL: {ad_id}")
-        
-        if ad_id in existing_ad_ids:
-            logging.info(f"Ogłoszenie {ad_id} już istnieje w bazie. Pomijam.")
-            return None
+            logging.info(f"\n🔍 Szukam {field}:")
             
-        # Ekstrakcja ceny
-        price = ""
-        price_selectors = [
-            "strong.css-8qi9av",
-            "[data-cy='adPageHeaderPrice']",
-            "strong[data-cy='adPageHeaderPrice']",
-            "div.css-8qi9av",
-            "strong.css-t80apw",  # Nowy selektor
-            "[data-testid='ad-price-value']",  # Nowy selektor
-            "div.css-1vr19r7",  # Nowy selektor
-            "div[data-testid='ad.price-value']"  # Nowy selektor
-        ]
-        
-        for selector in price_selectors:
-            try:
-                elements = soup.select(selector)
-                for element in elements:
-                    if element:
-                        price_text = clean_text(element.get_text(strip=True))
-                        # Usuń tekst "od" z ceny
-                        price_text = re.sub(r'^od\s+', '', price_text, flags=re.IGNORECASE)
-                        logging.info(f"Znaleziono potencjalną cenę: {price_text}")
+            for container_selector in field_config['containers']:
+                try:
+                    containers = soup.select(container_selector)
+                    logging.info(f"  Próba użycia selektora kontenera: {container_selector}")
+                    logging.info(f"  Znaleziono {len(containers)} kontenerów")
+                    
+                    for container in containers:
+                        if container:
+                            container_text = clean_text(container.get_text())
+                            logging.info(f"  ✓ Znaleziono kontener: {container_selector}")
+                            logging.info(f"  Tekst kontenera: {container_text}")
+                            
+                            # Próbujemy znaleźć wartość bezpośrednio w kontenerze
+                            if container_text:
+                                if field == 'area':
+                                    area_match = re.search(r'(\d+[.,]?\d*)\s*m[²2]', container_text)
+                                    if area_match:
+                                        area_value = float(area_match.group(1).replace(',', '.'))
+                                        if area_value > 0:
+                                            details[field] = f"{area_value:.1f} m²"
+                                            logging.info(f"    ✓ Znaleziono powierzchnię: {details[field]}")
+                                            break
+                                elif field == 'rooms':
+                                    rooms_match = re.search(r'(\d+)\s*(?:pok|pokoi|pokoje)?', container_text)
+                                    if rooms_match:
+                                        rooms_value = int(rooms_match.group(1))
+                                        if 0 < rooms_value <= 10:
+                                            details[field] = str(rooms_value)
+                                            logging.info(f"    ✓ Znaleziono liczbę pokoi: {details[field]}")
+                                            break
+                                elif field == 'market':
+                                    market_match = re.search(r'(wtórny|pierwotny)', container_text.lower())
+                                    if market_match:
+                                        details[field] = market_match.group(1)
+                                        logging.info(f"    ✓ Znaleziono rynek: {details[field]}")
+                                        break
+                                    elif "deweloper" in container_text.lower():
+                                        details[field] = "pierwotny"
+                                        logging.info(f"    ✓ Znaleziono rynek (deweloper): {details[field]}")
+                                        break
+                            
+                            # Jeśli nie znaleziono wartości bezpośrednio, próbujemy użyć selektorów wartości
+                            for value_selector in field_config['value_selectors']:
+                                try:
+                                    value_elements = container.select(value_selector)
+                                    logging.info(f"    Próba użycia selektora wartości: {value_selector}")
+                                    logging.info(f"    Znaleziono {len(value_elements)} elementów")
+                                    
+                                    for value_element in value_elements:
+                                        if value_element:
+                                            value = clean_text(value_element.text)
+                                            logging.info(f"    Znaleziono wartość: {value}")
+                                            
+                                            if field == 'area':
+                                                area_match = re.search(r'(\d+[.,]?\d*)\s*m[²2]', value)
+                                                if area_match:
+                                                    area_value = float(area_match.group(1).replace(',', '.'))
+                                                    if area_value > 0:
+                                                        details[field] = f"{area_value:.1f} m²"
+                                                        logging.info(f"    ✓ Znaleziono powierzchnię: {details[field]}")
+                                                        break
+                                            elif field == 'rooms':
+                                                rooms_match = re.search(r'(\d+)\s*(?:pok|pokoi|pokoje)?', value)
+                                                if rooms_match:
+                                                    rooms_value = int(rooms_match.group(1))
+                                                    if 0 < rooms_value <= 10:
+                                                        details[field] = str(rooms_value)
+                                                        logging.info(f"    ✓ Znaleziono liczbę pokoi: {details[field]}")
+                                                        break
+                                            elif field == 'market':
+                                                market_match = re.search(r'(wtórny|pierwotny)', value.lower())
+                                                if market_match:
+                                                    details[field] = market_match.group(1)
+                                                    logging.info(f"    ✓ Znaleziono rynek: {details[field]}")
+                                                    break
+                                                elif "deweloper" in value.lower():
+                                                    details[field] = "pierwotny"
+                                                    logging.info(f"    ✓ Znaleziono rynek (deweloper): {details[field]}")
+                                                    break
+                                except Exception as e:
+                                    logging.debug(f"    ⚠ Błąd przy próbie użycia selektora {value_selector}: {str(e)}")
+                                    continue
                         
-                        if is_valid_price(price_text):
-                            price = price_text
-                            logging.info(f"Zaakceptowano cenę: {price}")
+                        if field in details:
                             break
-                if price:
+                except Exception as e:
+                    logging.debug(f"  ⚠ Błąd przy próbie użycia selektora kontenera {container_selector}: {str(e)}")
+                    continue
+                
+                if field in details:
                     break
-            except Exception as e:
-                logging.debug(f"Błąd przy próbie użycia selektora ceny {selector}: {str(e)}")
-                continue
-        
-        if not is_valid_price(price):
-            logging.info(f"Nieprawidłowa cena dla ogłoszenia {ad_id}. Pomijam.")
-            return None
-        
+
         # Ekstrakcja adresu
         address = ""
         address_selectors = [
@@ -497,13 +385,99 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         ]
         
         for selector in address_selectors:
-            element = soup.select_one(selector)
-            if element:
-                address = clean_text(element.get_text(strip=True))
-                logging.info(f"Znaleziono adres używając selektora: {selector}")
-                logging.info(f"Adres: {address}")
-                if address and not address.startswith('.css'):
+            try:
+                element = soup.select_one(selector)
+                if element:
+                    address = clean_text(element.get_text(strip=True))
+                    logging.info(f"Znaleziono adres używając selektora: {selector}")
+                    logging.info(f"Adres: {address}")
+                    if address and not address.startswith('.css'):
+                        break
+            except Exception as e:
+                logging.debug(f"Błąd przy próbie użycia selektora adresu {selector}: {str(e)}")
+                continue
+        
+        # Ekstrakcja tytułu
+        title = ""
+        title_selectors = [
+            "h1.css-1wnihf5",
+            "[data-cy='adPageAdTitle']",
+            "h1[data-cy='adPageAdTitle']",
+            "div.css-1wnihf5 h1"
+        ]
+        
+        for selector in title_selectors:
+            try:
+                element = soup.select_one(selector)
+                if element:
+                    title = clean_text(element.get_text(strip=True))
+                    logging.info(f"Znaleziono tytuł używając selektora: {selector}")
+                    logging.info(f"Tytuł: {title}")
                     break
+            except Exception as e:
+                logging.debug(f"Błąd przy próbie użycia selektora tytułu {selector}: {str(e)}")
+                continue
+        
+        # Ekstrakcja ceny
+        price = ""
+        price_selectors = [
+            "strong.css-8qi9av",
+            "[data-cy='adPageHeaderPrice']",
+            "strong[data-cy='adPageHeaderPrice']",
+            "div.css-8qi9av",
+            "strong.css-t80apw",
+            "[data-testid='ad-price-value']",
+            "div.css-1vr19r7",
+            "div[data-testid='ad.price-value']"
+        ]
+        
+        for selector in price_selectors:
+            try:
+                elements = soup.select(selector)
+                for element in elements:
+                    if element:
+                        price_text = clean_text(element.get_text(strip=True))
+                        price_text = re.sub(r'^od\s+', '', price_text, flags=re.IGNORECASE)
+                        logging.info(f"Znaleziono potencjalną cenę: {price_text}")
+                        
+                        if is_valid_price(price_text):
+                            price = price_text
+                            logging.info(f"Zaakceptowano cenę: {price}")
+                            break
+                if price:
+                    break
+            except Exception as e:
+                logging.debug(f"Błąd przy próbie użycia selektora ceny {selector}: {str(e)}")
+                continue
+        
+        # Ekstrakcja ID ogłoszenia
+        ad_id = ""
+        ad_id_selectors = [
+            "[data-cy='adPageAdId']",
+            "p[data-sentry-element='DetailsProperty']",
+            "[data-testid='ad-id']",
+            "div.css-1k13n9p"
+        ]
+        
+        for selector in ad_id_selectors:
+            try:
+                element = soup.select_one(selector)
+                if element:
+                    logging.info(f"Znaleziono element ID używając selektora: {selector}")
+                    text = element.get_text(strip=True)
+                    if ":" in text:
+                        ad_id = text.split(":")[-1].strip()
+                    else:
+                        ad_id = text.strip()
+                    if ad_id:
+                        break
+            except Exception as e:
+                logging.debug(f"Błąd przy próbie użycia selektora ID {selector}: {str(e)}")
+                continue
+        
+        if not ad_id:
+            ad_id = url.split('/')[-1].split('.')[0]
+            logging.info(f"Wyciągnięto ID z URL: {ad_id}")
         
         # Przygotuj dane do zapisania
         listing_data = {
@@ -520,12 +494,12 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         # Debug log
         logging.info("Sparsowane dane ogłoszenia:")
         for key, value in listing_data.items():
-            logging.info(f"{key}: {value}")
+            logging.info(f"{key}: {value or 'Brak danych'}")
         
         return listing_data
         
     except Exception as e:
-        logging.error(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
+        logging.error(f"❌ Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
         import traceback
         logging.error(f"Traceback: {traceback.format_exc()}")
         return None

@@ -9165,3 +9165,761 @@ Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/rezerwacja-mieszkanie
 2025-06-03 19:58:31,412 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
 2025-06-03 19:58:31,413 - INFO - Pomyślnie zapisano ogłoszenie 66840809 do Notion
 2025-06-03 19:58:31,414 - INFO - Pomyślnie zapisano ogłoszenie 66840809
+2025-06-03 20:05:16,211 - INFO - NOTION_API_KEY length: 50
+2025-06-03 20:05:16,211 - INFO - NOTION_DATABASE_ID length: 32
+2025-06-03 20:05:17,026 - INFO - HTTP Request: GET https://api.notion.com/v1/databases/2071629ea937800f9da3c42a45511301 "HTTP/1.1 200 OK"
+2025-06-03 20:05:17,027 - INFO - Połączenie z Notion zostało ustanowione pomyślnie
+2025-06-03 20:05:17,028 - INFO - Rozpoczynanie scrapera...
+2025-06-03 20:05:17,672 - INFO - HTTP Request: POST https://api.notion.com/v1/databases/2071629ea937800f9da3c42a45511301/query "HTTP/1.1 200 OK"
+2025-06-03 20:05:17,675 - INFO - Pobrano 0 istniejących ID z bazy Notion
+2025-06-03 20:05:17,677 - INFO - Znaleziono 0 istniejących ogłoszeń w bazie
+2025-06-03 20:05:17,678 - INFO - 
+Przetwarzanie strony 1: https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska?page=1&viewType=listing
+2025-06-03 20:05:22,228 - INFO - Znaleziono 40 elementów używając selektora: a[data-cy='listing-item-link']
+2025-06-03 20:05:22,228 - INFO - Znaleziono 40 unikalnych linków do ogłoszeń
+2025-06-03 20:05:22,229 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-65m2-balkon-bezposrednio-ID4ullk
+2025-06-03 20:05:26,013 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-65m2-balkon-bezposrednio-ID4ullk
+2025-06-03 20:05:26,016 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:05:26,016 - INFO - Tekst kontenera: Powierzchnia:65.19 m²
+2025-06-03 20:05:26,016 - INFO - Znaleziono powierzchnię: 65.2 m²
+2025-06-03 20:05:26,019 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:05:26,019 - INFO - Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:05:26,019 - INFO - Znaleziono liczbę pokoi: 3
+2025-06-03 20:05:26,021 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:05:26,022 - INFO - Tekst kontenera: Rynek:pierwotny
+2025-06-03 20:05:26,022 - INFO - Znaleziono rynek: pierwotny
+2025-06-03 20:05:26,030 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:05:26,030 - INFO - Tytuł: 3-pokojowe mieszkanie 65m2 + balkon Bezpośrednio
+2025-06-03 20:05:26,036 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:05:26,068 - INFO - Nieprawidłowa cena dla ogłoszenia 66337230. Pomijam.
+2025-06-03 20:05:29,402 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-58m2-ogrodek-ID4ubmR
+2025-06-03 20:05:32,514 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-58m2-ogrodek-ID4ubmR
+2025-06-03 20:05:32,517 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:05:32,517 - INFO - Tekst kontenera: Powierzchnia:58.79 m²
+2025-06-03 20:05:32,517 - INFO - Znaleziono powierzchnię: 58.8 m²
+2025-06-03 20:05:32,519 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:05:32,519 - INFO - Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:05:32,520 - INFO - Znaleziono liczbę pokoi: 3
+2025-06-03 20:05:32,522 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:05:32,522 - INFO - Tekst kontenera: Rynek:pierwotny
+2025-06-03 20:05:32,522 - INFO - Znaleziono rynek: pierwotny
+2025-06-03 20:05:32,530 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:05:32,530 - INFO - Tytuł: 3-pokojowe mieszkanie 58m2 + ogródek
+2025-06-03 20:05:32,536 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:05:32,555 - INFO - Nieprawidłowa cena dla ogłoszenia 66298885. Pomijam.
+2025-06-03 20:05:37,203 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/1-pokojowe-mieszkanie-28m2-ogrodek-bez-prowizji-ID4uKMF
+2025-06-03 20:05:42,764 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/1-pokojowe-mieszkanie-28m2-ogrodek-bez-prowizji-ID4uKMF
+2025-06-03 20:05:42,766 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:05:42,766 - INFO - Tekst kontenera: Powierzchnia:28.91 m²
+2025-06-03 20:05:42,767 - INFO - Znaleziono powierzchnię: 28.9 m²
+2025-06-03 20:05:42,769 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:05:42,770 - INFO - Tekst kontenera: Liczba pokoi:1
+2025-06-03 20:05:42,770 - INFO - Znaleziono liczbę pokoi: 1
+2025-06-03 20:05:42,772 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:05:42,772 - INFO - Tekst kontenera: Rynek:pierwotny
+2025-06-03 20:05:42,772 - INFO - Znaleziono rynek: pierwotny
+2025-06-03 20:05:42,780 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:05:42,781 - INFO - Tytuł: 1-pokojowe mieszkanie 28m2 + ogródek Bez Prowizji
+2025-06-03 20:05:42,786 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:05:42,805 - INFO - Nieprawidłowa cena dla ogłoszenia 66435025. Pomijam.
+2025-06-03 20:05:45,252 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/2-pokojowe-orla-bdb-standard-ID4wd78
+2025-06-03 20:05:50,719 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/2-pokojowe-orla-bdb-standard-ID4wd78
+2025-06-03 20:05:50,722 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:05:50,722 - INFO - Tekst kontenera: Powierzchnia:45.73 m²
+2025-06-03 20:05:50,722 - INFO - Znaleziono powierzchnię: 45.7 m²
+2025-06-03 20:05:50,724 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:05:50,724 - INFO - Tekst kontenera: Liczba pokoi:2
+2025-06-03 20:05:50,724 - INFO - Znaleziono liczbę pokoi: 2
+2025-06-03 20:05:50,727 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:05:50,727 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:05:50,727 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:05:50,735 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:05:50,735 - INFO - Tytuł: 2 pokojowe Orla/bdb standard!
+2025-06-03 20:05:50,740 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:05:50,746 - INFO - Znaleziono potencjalną cenę: 249 000 zł
+2025-06-03 20:05:50,746 - INFO - Zaakceptowano cenę: 249 000 zł
+2025-06-03 20:05:50,754 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:05:50,754 - INFO - Adres: Koszalin, zachodniopomorskie
+2025-06-03 20:05:50,754 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:05:50,754 - INFO - title: 2 pokojowe Orla/bdb standard!
+2025-06-03 20:05:50,754 - INFO - price: 249 000 zł
+2025-06-03 20:05:50,754 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:05:50,754 - INFO - area: 45.7 m²
+2025-06-03 20:05:50,755 - INFO - rooms: 2
+2025-06-03 20:05:50,755 - INFO - market: wtórny
+2025-06-03 20:05:50,755 - INFO - ad_id: 66543926
+2025-06-03 20:05:50,755 - INFO - url: https://www.otodom.pl/pl/oferta/2-pokojowe-orla-bdb-standard-ID4wd78
+2025-06-03 20:05:50,755 - INFO - Próba zapisania ogłoszenia 66543926 do Notion
+2025-06-03 20:05:50,755 - INFO - Dane do zapisania:
+2025-06-03 20:05:50,755 - INFO - title: 2 pokojowe Orla/bdb standard!
+2025-06-03 20:05:50,755 - INFO - price: 249 000 zł
+2025-06-03 20:05:50,755 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:05:50,755 - INFO - area: 45.7 m²
+2025-06-03 20:05:50,755 - INFO - rooms: 2
+2025-06-03 20:05:50,755 - INFO - market: wtórny
+2025-06-03 20:05:50,756 - INFO - ad_id: 66543926
+2025-06-03 20:05:50,756 - INFO - url: https://www.otodom.pl/pl/oferta/2-pokojowe-orla-bdb-standard-ID4wd78
+2025-06-03 20:05:55,996 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:05:56,096 - INFO - Pomyślnie zapisano ogłoszenie 66543926 do Notion
+2025-06-03 20:05:56,099 - INFO - Pomyślnie zapisano ogłoszenie 66543926
+2025-06-03 20:06:00,774 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/2-pokoje-z-loggia-parter-broniewskiego-ID4wc1X
+2025-06-03 20:06:04,683 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/2-pokoje-z-loggia-parter-broniewskiego-ID4wc1X
+2025-06-03 20:06:04,686 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:04,686 - INFO - Tekst kontenera: Powierzchnia:42.17 m²
+2025-06-03 20:06:04,686 - INFO - Znaleziono powierzchnię: 42.2 m²
+2025-06-03 20:06:04,688 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:04,688 - INFO - Tekst kontenera: Liczba pokoi:2
+2025-06-03 20:06:04,689 - INFO - Znaleziono liczbę pokoi: 2
+2025-06-03 20:06:04,691 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:04,691 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:06:04,691 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:06:04,700 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:04,700 - INFO - Tytuł: 2 pokoje z loggią -parter- Broniewskiego!
+2025-06-03 20:06:04,706 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:04,712 - INFO - Znaleziono potencjalną cenę: 279 000 zł
+2025-06-03 20:06:04,712 - INFO - Zaakceptowano cenę: 279 000 zł
+2025-06-03 20:06:04,720 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:04,720 - INFO - Adres: Koszalin, zachodniopomorskie
+2025-06-03 20:06:04,720 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:04,720 - INFO - title: 2 pokoje z loggią -parter- Broniewskiego!
+2025-06-03 20:06:04,720 - INFO - price: 279 000 zł
+2025-06-03 20:06:04,721 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:06:04,721 - INFO - area: 42.2 m²
+2025-06-03 20:06:04,721 - INFO - rooms: 2
+2025-06-03 20:06:04,721 - INFO - market: wtórny
+2025-06-03 20:06:04,721 - INFO - ad_id: 66539761
+2025-06-03 20:06:04,721 - INFO - url: https://www.otodom.pl/pl/oferta/2-pokoje-z-loggia-parter-broniewskiego-ID4wc1X
+2025-06-03 20:06:04,721 - INFO - Próba zapisania ogłoszenia 66539761 do Notion
+2025-06-03 20:06:04,721 - INFO - Dane do zapisania:
+2025-06-03 20:06:04,721 - INFO - title: 2 pokoje z loggią -parter- Broniewskiego!
+2025-06-03 20:06:04,722 - INFO - price: 279 000 zł
+2025-06-03 20:06:04,722 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:06:04,722 - INFO - area: 42.2 m²
+2025-06-03 20:06:04,722 - INFO - rooms: 2
+2025-06-03 20:06:04,722 - INFO - market: wtórny
+2025-06-03 20:06:04,722 - INFO - ad_id: 66539761
+2025-06-03 20:06:04,722 - INFO - url: https://www.otodom.pl/pl/oferta/2-pokoje-z-loggia-parter-broniewskiego-ID4wc1X
+2025-06-03 20:06:05,967 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:05,971 - INFO - Pomyślnie zapisano ogłoszenie 66539761 do Notion
+2025-06-03 20:06:05,972 - INFO - Pomyślnie zapisano ogłoszenie 66539761
+2025-06-03 20:06:09,400 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-gotowe-do-zamieszkania-ID4wO73
+2025-06-03 20:06:14,124 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-gotowe-do-zamieszkania-ID4wO73
+2025-06-03 20:06:14,130 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:14,131 - INFO - Tekst kontenera: Powierzchnia:61.01 m²
+2025-06-03 20:06:14,131 - INFO - Znaleziono powierzchnię: 61.0 m²
+2025-06-03 20:06:14,137 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:14,147 - INFO - Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:06:14,153 - INFO - Znaleziono liczbę pokoi: 3
+2025-06-03 20:06:14,161 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:14,162 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:06:14,162 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:06:14,180 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:14,180 - INFO - Tytuł: 3-pokojowe mieszkanie – gotowe do zamieszkania
+2025-06-03 20:06:14,194 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:14,209 - INFO - Znaleziono potencjalną cenę: 470 000 zł
+2025-06-03 20:06:14,210 - INFO - Zaakceptowano cenę: 470 000 zł
+2025-06-03 20:06:14,228 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:14,228 - INFO - Adres: ul.Ziemowita, Olechów, Widzew, Łódź, łódzkie
+2025-06-03 20:06:14,229 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:14,230 - INFO - title: 3-pokojowe mieszkanie – gotowe do zamieszkania
+2025-06-03 20:06:14,230 - INFO - price: 470 000 zł
+2025-06-03 20:06:14,230 - INFO - address: ul.Ziemowita, Olechów, Widzew, Łódź, łódzkie
+2025-06-03 20:06:14,231 - INFO - area: 61.0 m²
+2025-06-03 20:06:14,231 - INFO - rooms: 3
+2025-06-03 20:06:14,232 - INFO - market: wtórny
+2025-06-03 20:06:14,233 - INFO - ad_id: 66686149
+2025-06-03 20:06:14,234 - INFO - url: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-gotowe-do-zamieszkania-ID4wO73
+2025-06-03 20:06:14,235 - INFO - Próba zapisania ogłoszenia 66686149 do Notion
+2025-06-03 20:06:14,235 - INFO - Dane do zapisania:
+2025-06-03 20:06:14,236 - INFO - title: 3-pokojowe mieszkanie – gotowe do zamieszkania
+2025-06-03 20:06:14,236 - INFO - price: 470 000 zł
+2025-06-03 20:06:14,236 - INFO - address: ul.Ziemowita, Olechów, Widzew, Łódź, łódzkie
+2025-06-03 20:06:14,236 - INFO - area: 61.0 m²
+2025-06-03 20:06:14,237 - INFO - rooms: 3
+2025-06-03 20:06:14,237 - INFO - market: wtórny
+2025-06-03 20:06:14,237 - INFO - ad_id: 66686149
+2025-06-03 20:06:14,238 - INFO - url: https://www.otodom.pl/pl/oferta/3-pokojowe-mieszkanie-gotowe-do-zamieszkania-ID4wO73
+2025-06-03 20:06:15,367 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:15,369 - INFO - Pomyślnie zapisano ogłoszenie 66686149 do Notion
+2025-06-03 20:06:15,369 - INFO - Pomyślnie zapisano ogłoszenie 66686149
+2025-06-03 20:06:18,898 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/okazja-czarkowo-przytulne-mieszkanie-2-pokoje-oddzielna-kuchnia-ID4vobo
+2025-06-03 20:06:23,953 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/okazja-czarkowo-przytulne-mieszkanie-2-pokoje-oddzielna-kuchnia-ID4vobo
+2025-06-03 20:06:23,956 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:23,956 - INFO - Tekst kontenera: Powierzchnia:47.4 m²
+2025-06-03 20:06:23,956 - INFO - Znaleziono powierzchnię: 47.4 m²
+2025-06-03 20:06:23,959 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:23,959 - INFO - Tekst kontenera: Liczba pokoi:2
+2025-06-03 20:06:23,959 - INFO - Znaleziono liczbę pokoi: 2
+2025-06-03 20:06:23,961 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:23,961 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:06:23,962 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:06:23,970 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:23,970 - INFO - Tytuł: OKAZJA!!! Czarkowo, przytulne mieszkanie -2 pokoje, oddzielna kuchnia
+2025-06-03 20:06:23,975 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:23,981 - INFO - Znaleziono potencjalną cenę: 459 000 zł
+2025-06-03 20:06:23,981 - INFO - Zaakceptowano cenę: 459 000 zł
+2025-06-03 20:06:23,989 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:23,989 - INFO - Adres: Łężyca, Zielona Góra, lubuskie
+2025-06-03 20:06:23,989 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:23,989 - INFO - title: OKAZJA!!! Czarkowo, przytulne mieszkanie -2 pokoje, oddzielna kuchnia
+2025-06-03 20:06:23,989 - INFO - price: 459 000 zł
+2025-06-03 20:06:23,989 - INFO - address: Łężyca, Zielona Góra, lubuskie
+2025-06-03 20:06:23,989 - INFO - area: 47.4 m²
+2025-06-03 20:06:23,989 - INFO - rooms: 2
+2025-06-03 20:06:23,990 - INFO - market: wtórny
+2025-06-03 20:06:23,990 - INFO - ad_id: 66824802
+2025-06-03 20:06:23,990 - INFO - url: https://www.otodom.pl/pl/oferta/okazja-czarkowo-przytulne-mieszkanie-2-pokoje-oddzielna-kuchnia-ID4vobo
+2025-06-03 20:06:23,990 - INFO - Próba zapisania ogłoszenia 66824802 do Notion
+2025-06-03 20:06:23,990 - INFO - Dane do zapisania:
+2025-06-03 20:06:23,990 - INFO - title: OKAZJA!!! Czarkowo, przytulne mieszkanie -2 pokoje, oddzielna kuchnia
+2025-06-03 20:06:23,990 - INFO - price: 459 000 zł
+2025-06-03 20:06:23,990 - INFO - address: Łężyca, Zielona Góra, lubuskie
+2025-06-03 20:06:23,990 - INFO - area: 47.4 m²
+2025-06-03 20:06:23,990 - INFO - rooms: 2
+2025-06-03 20:06:23,990 - INFO - market: wtórny
+2025-06-03 20:06:23,990 - INFO - ad_id: 66824802
+2025-06-03 20:06:23,991 - INFO - url: https://www.otodom.pl/pl/oferta/okazja-czarkowo-przytulne-mieszkanie-2-pokoje-oddzielna-kuchnia-ID4vobo
+2025-06-03 20:06:26,611 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:26,612 - INFO - Pomyślnie zapisano ogłoszenie 66824802 do Notion
+2025-06-03 20:06:26,613 - INFO - Pomyślnie zapisano ogłoszenie 66824802
+2025-06-03 20:06:30,059 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/duza-kawalerka-loggia-3-pietro-zakole-ID4uZOh
+2025-06-03 20:06:35,086 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/duza-kawalerka-loggia-3-pietro-zakole-ID4uZOh
+2025-06-03 20:06:35,089 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:35,089 - INFO - Tekst kontenera: Powierzchnia:30.4 m²
+2025-06-03 20:06:35,089 - INFO - Znaleziono powierzchnię: 30.4 m²
+2025-06-03 20:06:35,091 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:35,092 - INFO - Tekst kontenera: Liczba pokoi:1
+2025-06-03 20:06:35,092 - INFO - Znaleziono liczbę pokoi: 1
+2025-06-03 20:06:35,094 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:35,094 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:06:35,094 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:06:35,104 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:35,104 - INFO - Tytuł: Duża kawalerka/loggia/3 piętro-Zakole!
+2025-06-03 20:06:35,109 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:35,115 - INFO - Znaleziono potencjalną cenę: 235 000 zł
+2025-06-03 20:06:35,116 - INFO - Zaakceptowano cenę: 235 000 zł
+2025-06-03 20:06:35,124 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:35,124 - INFO - Adres: Koszalin, zachodniopomorskie
+2025-06-03 20:06:35,124 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:35,124 - INFO - title: Duża kawalerka/loggia/3 piętro-Zakole!
+2025-06-03 20:06:35,124 - INFO - price: 235 000 zł
+2025-06-03 20:06:35,124 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:06:35,125 - INFO - area: 30.4 m²
+2025-06-03 20:06:35,125 - INFO - rooms: 1
+2025-06-03 20:06:35,125 - INFO - market: wtórny
+2025-06-03 20:06:35,125 - INFO - ad_id: 66492785
+2025-06-03 20:06:35,125 - INFO - url: https://www.otodom.pl/pl/oferta/duza-kawalerka-loggia-3-pietro-zakole-ID4uZOh
+2025-06-03 20:06:35,125 - INFO - Próba zapisania ogłoszenia 66492785 do Notion
+2025-06-03 20:06:35,125 - INFO - Dane do zapisania:
+2025-06-03 20:06:35,125 - INFO - title: Duża kawalerka/loggia/3 piętro-Zakole!
+2025-06-03 20:06:35,125 - INFO - price: 235 000 zł
+2025-06-03 20:06:35,125 - INFO - address: Koszalin, zachodniopomorskie
+2025-06-03 20:06:35,125 - INFO - area: 30.4 m²
+2025-06-03 20:06:35,125 - INFO - rooms: 1
+2025-06-03 20:06:35,126 - INFO - market: wtórny
+2025-06-03 20:06:35,126 - INFO - ad_id: 66492785
+2025-06-03 20:06:35,126 - INFO - url: https://www.otodom.pl/pl/oferta/duza-kawalerka-loggia-3-pietro-zakole-ID4uZOh
+2025-06-03 20:06:35,648 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:35,648 - INFO - Pomyślnie zapisano ogłoszenie 66492785 do Notion
+2025-06-03 20:06:35,648 - INFO - Pomyślnie zapisano ogłoszenie 66492785
+2025-06-03 20:06:39,206 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/sloneczne-mieszkanie-w-zielonej-okolicy-garaz-niska-zabudowa-ID4vhjC
+2025-06-03 20:06:42,696 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/sloneczne-mieszkanie-w-zielonej-okolicy-garaz-niska-zabudowa-ID4vhjC
+2025-06-03 20:06:42,702 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:42,702 - INFO - Tekst kontenera: Powierzchnia:44.21 m²
+2025-06-03 20:06:42,703 - INFO - Znaleziono powierzchnię: 44.2 m²
+2025-06-03 20:06:42,709 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:42,710 - INFO - Tekst kontenera: Liczba pokoi:2
+2025-06-03 20:06:42,710 - INFO - Znaleziono liczbę pokoi: 2
+2025-06-03 20:06:42,717 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:42,717 - INFO - Tekst kontenera: Rynek:wtórny
+2025-06-03 20:06:42,718 - INFO - Znaleziono rynek: wtórny
+2025-06-03 20:06:42,737 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:42,738 - INFO - Tytuł: Słoneczne mieszkanie w zielonej okolicy-garaż-niska zabudowa
+2025-06-03 20:06:42,752 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:42,767 - INFO - Znaleziono potencjalną cenę: 699 000 zł
+2025-06-03 20:06:42,768 - INFO - Zaakceptowano cenę: 699 000 zł
+2025-06-03 20:06:42,786 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:42,787 - INFO - Adres: ul. Buraczana, Klecina, Krzyki, Wrocław, dolnośląskie
+2025-06-03 20:06:42,787 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:42,788 - INFO - title: Słoneczne mieszkanie w zielonej okolicy-garaż-niska zabudowa
+2025-06-03 20:06:42,788 - INFO - price: 699 000 zł
+2025-06-03 20:06:42,788 - INFO - address: ul. Buraczana, Klecina, Krzyki, Wrocław, dolnośląskie
+2025-06-03 20:06:42,789 - INFO - area: 44.2 m²
+2025-06-03 20:06:42,789 - INFO - rooms: 2
+2025-06-03 20:06:42,790 - INFO - market: wtórny
+2025-06-03 20:06:42,790 - INFO - ad_id: 66798404
+2025-06-03 20:06:42,790 - INFO - url: https://www.otodom.pl/pl/oferta/sloneczne-mieszkanie-w-zielonej-okolicy-garaz-niska-zabudowa-ID4vhjC
+2025-06-03 20:06:42,791 - INFO - Próba zapisania ogłoszenia 66798404 do Notion
+2025-06-03 20:06:42,791 - INFO - Dane do zapisania:
+2025-06-03 20:06:42,791 - INFO - title: Słoneczne mieszkanie w zielonej okolicy-garaż-niska zabudowa
+2025-06-03 20:06:42,792 - INFO - price: 699 000 zł
+2025-06-03 20:06:42,792 - INFO - address: ul. Buraczana, Klecina, Krzyki, Wrocław, dolnośląskie
+2025-06-03 20:06:42,792 - INFO - area: 44.2 m²
+2025-06-03 20:06:42,793 - INFO - rooms: 2
+2025-06-03 20:06:42,793 - INFO - market: wtórny
+2025-06-03 20:06:42,793 - INFO - ad_id: 66798404
+2025-06-03 20:06:42,793 - INFO - url: https://www.otodom.pl/pl/oferta/sloneczne-mieszkanie-w-zielonej-okolicy-garaz-niska-zabudowa-ID4vhjC
+2025-06-03 20:06:44,004 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:44,006 - INFO - Pomyślnie zapisano ogłoszenie 66798404 do Notion
+2025-06-03 20:06:44,008 - INFO - Pomyślnie zapisano ogłoszenie 66798404
+2025-06-03 20:06:47,357 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/lagodna-apartamenty-mieszkanie-3-pok-b-15-ID4v3bm
+2025-06-03 20:06:52,187 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/lagodna-apartamenty-mieszkanie-3-pok-b-15-ID4v3bm
+2025-06-03 20:06:52,193 - INFO - Znaleziono kontener dla area: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:06:52,193 - INFO - Tekst kontenera: Powierzchnia:68.5 m²
+2025-06-03 20:06:52,193 - INFO - Znaleziono powierzchnię: 68.5 m²
+2025-06-03 20:06:52,201 - INFO - Znaleziono kontener dla rooms: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:06:52,201 - INFO - Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:06:52,202 - INFO - Znaleziono liczbę pokoi: 3
+2025-06-03 20:06:52,207 - INFO - Znaleziono kontener dla market: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:06:52,208 - INFO - Tekst kontenera: Rynek:pierwotny
+2025-06-03 20:06:52,208 - INFO - Znaleziono rynek: pierwotny
+2025-06-03 20:06:52,228 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:06:52,228 - INFO - Tytuł: Łagodna Apartamenty | mieszkanie 3-pok. | B_15
+2025-06-03 20:06:52,242 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:06:52,258 - INFO - Znaleziono potencjalną cenę: 650 750 zł
+2025-06-03 20:06:52,258 - INFO - Zaakceptowano cenę: 650 750 zł
+2025-06-03 20:06:52,277 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:06:52,278 - INFO - Adres: ul. Łagodna, Złote Łany, Bielsko-Biała, śląskie
+2025-06-03 20:06:52,278 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:06:52,279 - INFO - title: Łagodna Apartamenty | mieszkanie 3-pok. | B_15
+2025-06-03 20:06:52,279 - INFO - price: 650 750 zł
+2025-06-03 20:06:52,279 - INFO - address: ul. Łagodna, Złote Łany, Bielsko-Biała, śląskie
+2025-06-03 20:06:52,280 - INFO - area: 68.5 m²
+2025-06-03 20:06:52,280 - INFO - rooms: 3
+2025-06-03 20:06:52,280 - INFO - market: pierwotny
+2025-06-03 20:06:52,281 - INFO - ad_id: 66744076
+2025-06-03 20:06:52,281 - INFO - url: https://www.otodom.pl/pl/oferta/lagodna-apartamenty-mieszkanie-3-pok-b-15-ID4v3bm
+2025-06-03 20:06:52,281 - INFO - Próba zapisania ogłoszenia 66744076 do Notion
+2025-06-03 20:06:52,282 - INFO - Dane do zapisania:
+2025-06-03 20:06:52,282 - INFO - title: Łagodna Apartamenty | mieszkanie 3-pok. | B_15
+2025-06-03 20:06:52,283 - INFO - price: 650 750 zł
+2025-06-03 20:06:52,284 - INFO - address: ul. Łagodna, Złote Łany, Bielsko-Biała, śląskie
+2025-06-03 20:06:52,284 - INFO - area: 68.5 m²
+2025-06-03 20:06:52,285 - INFO - rooms: 3
+2025-06-03 20:06:52,285 - INFO - market: pierwotny
+2025-06-03 20:06:52,285 - INFO - ad_id: 66744076
+2025-06-03 20:06:52,285 - INFO - url: https://www.otodom.pl/pl/oferta/lagodna-apartamenty-mieszkanie-3-pok-b-15-ID4v3bm
+2025-06-03 20:06:52,780 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:06:52,781 - INFO - Pomyślnie zapisano ogłoszenie 66744076 do Notion
+2025-06-03 20:06:52,782 - INFO - Pomyślnie zapisano ogłoszenie 66744076
+2025-06-03 20:15:03,958 - INFO - NOTION_API_KEY length: 50
+2025-06-03 20:15:03,959 - INFO - NOTION_DATABASE_ID length: 32
+2025-06-03 20:15:05,240 - INFO - HTTP Request: GET https://api.notion.com/v1/databases/2071629ea937800f9da3c42a45511301 "HTTP/1.1 200 OK"
+2025-06-03 20:15:05,241 - INFO - Połączenie z Notion zostało ustanowione pomyślnie
+2025-06-03 20:15:05,241 - INFO - Rozpoczynanie scrapera...
+2025-06-03 20:15:05,905 - INFO - HTTP Request: POST https://api.notion.com/v1/databases/2071629ea937800f9da3c42a45511301/query "HTTP/1.1 200 OK"
+2025-06-03 20:15:05,906 - INFO - Pobrano 0 istniejących ID z bazy Notion
+2025-06-03 20:15:05,906 - INFO - Znaleziono 0 istniejących ogłoszeń w bazie
+2025-06-03 20:15:05,907 - INFO - 
+Przetwarzanie strony 1: https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska?page=1&viewType=listing
+2025-06-03 20:15:10,809 - INFO - Znaleziono 24 elementów używając selektora: a[data-cy='listing-item-link']
+2025-06-03 20:15:10,809 - INFO - Znaleziono 24 unikalnych linków do ogłoszeń
+2025-06-03 20:15:10,810 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/3-pokojowe-bezposrednio-przy-parku-roz-ID4vGQz
+2025-06-03 20:15:13,558 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/3-pokojowe-bezposrednio-przy-parku-roz-ID4vGQz
+2025-06-03 20:15:13,558 - INFO - Status code: 200
+2025-06-03 20:15:13,559 - INFO - Content length: 336357
+2025-06-03 20:15:13,619 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:15:13,619 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/3-pokojowe-bezposrednio-przy-parku-roz-ID4vGQz
+2025-06-03 20:15:13,619 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:15:13,622 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:13,622 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:13,622 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:13,622 - INFO -   Tekst kontenera: Powierzchnia:57 m²
+2025-06-03 20:15:13,622 - INFO -     ✓ Znaleziono powierzchnię: 57.0 m²
+2025-06-03 20:15:13,622 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:15:13,625 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:13,625 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:13,625 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:13,625 - INFO -   Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:15:13,625 - INFO -     ✓ Znaleziono liczbę pokoi: 3
+2025-06-03 20:15:13,625 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:15:13,628 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:13,628 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:13,628 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:13,628 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:15:13,628 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:15:13,636 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:15:13,636 - INFO - Adres: ul. Astrów, Klimzowiec, Centrum, Chorzów, śląskie
+2025-06-03 20:15:13,640 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:15:13,640 - INFO - Tytuł: 3-pokojowe bezpośrednio przy Parku Róż!
+2025-06-03 20:15:13,645 - INFO - Znaleziono potencjalną cenę: 395 000 zł
+2025-06-03 20:15:13,646 - INFO - Zaakceptowano cenę: 395 000 zł
+2025-06-03 20:15:13,651 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:15:13,651 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:15:13,651 - INFO - title: 3-pokojowe bezpośrednio przy Parku Róż!
+2025-06-03 20:15:13,652 - INFO - price: 395 000 zł
+2025-06-03 20:15:13,652 - INFO - address: ul. Astrów, Klimzowiec, Centrum, Chorzów, śląskie
+2025-06-03 20:15:13,652 - INFO - area: 57.0 m²
+2025-06-03 20:15:13,652 - INFO - rooms: 3
+2025-06-03 20:15:13,652 - INFO - market: wtórny
+2025-06-03 20:15:13,652 - INFO - ad_id: 66896547
+2025-06-03 20:15:13,652 - INFO - url: https://www.otodom.pl/pl/oferta/3-pokojowe-bezposrednio-przy-parku-roz-ID4vGQz
+2025-06-03 20:15:13,652 - INFO - Próba zapisania ogłoszenia 66896547 do Notion
+2025-06-03 20:15:13,652 - INFO - Dane do zapisania:
+2025-06-03 20:15:13,653 - INFO - title: 3-pokojowe bezpośrednio przy Parku Róż!
+2025-06-03 20:15:13,653 - INFO - price: 395 000 zł
+2025-06-03 20:15:13,653 - INFO - address: ul. Astrów, Klimzowiec, Centrum, Chorzów, śląskie
+2025-06-03 20:15:13,653 - INFO - area: 57.0 m²
+2025-06-03 20:15:13,653 - INFO - rooms: 3
+2025-06-03 20:15:13,653 - INFO - market: wtórny
+2025-06-03 20:15:13,653 - INFO - ad_id: 66896547
+2025-06-03 20:15:13,653 - INFO - url: https://www.otodom.pl/pl/oferta/3-pokojowe-bezposrednio-przy-parku-roz-ID4vGQz
+2025-06-03 20:15:15,001 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:15:15,011 - INFO - Pomyślnie zapisano ogłoszenie 66896547 do Notion
+2025-06-03 20:15:15,013 - INFO - Pomyślnie zapisano ogłoszenie 66896547
+2025-06-03 20:15:19,517 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/mieszkanie-44-m-krakow-ID4vGJX
+2025-06-03 20:15:24,450 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/mieszkanie-44-m-krakow-ID4vGJX
+2025-06-03 20:15:24,450 - INFO - Status code: 200
+2025-06-03 20:15:24,450 - INFO - Content length: 339614
+2025-06-03 20:15:24,512 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:15:24,513 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/mieszkanie-44-m-krakow-ID4vGJX
+2025-06-03 20:15:24,513 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:15:24,516 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:24,516 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:24,516 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:24,516 - INFO -   Tekst kontenera: Powierzchnia:44 m²
+2025-06-03 20:15:24,516 - INFO -     ✓ Znaleziono powierzchnię: 44.0 m²
+2025-06-03 20:15:24,517 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:15:24,519 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:24,519 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:24,519 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:24,520 - INFO -   Tekst kontenera: Liczba pokoi:2
+2025-06-03 20:15:24,520 - INFO -     ✓ Znaleziono liczbę pokoi: 2
+2025-06-03 20:15:24,520 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:15:24,523 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:24,523 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:24,523 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:24,523 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:15:24,523 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:15:24,530 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:15:24,530 - INFO - Adres: ul. Wlotowa, Kozłówka, Bieżanów-Prokocim, Kraków, małopolskie
+2025-06-03 20:15:24,534 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:15:24,534 - INFO - Tytuł: Mieszkanie, 44 m², Kraków
+2025-06-03 20:15:24,540 - INFO - Znaleziono potencjalną cenę: 650 000 zł
+2025-06-03 20:15:24,540 - INFO - Zaakceptowano cenę: 650 000 zł
+2025-06-03 20:15:24,545 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:15:24,545 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:15:24,545 - INFO - title: Mieszkanie, 44 m², Kraków
+2025-06-03 20:15:24,546 - INFO - price: 650 000 zł
+2025-06-03 20:15:24,546 - INFO - address: ul. Wlotowa, Kozłówka, Bieżanów-Prokocim, Kraków, małopolskie
+2025-06-03 20:15:24,546 - INFO - area: 44.0 m²
+2025-06-03 20:15:24,546 - INFO - rooms: 2
+2025-06-03 20:15:24,546 - INFO - market: wtórny
+2025-06-03 20:15:24,546 - INFO - ad_id: 66896137
+2025-06-03 20:15:24,546 - INFO - url: https://www.otodom.pl/pl/oferta/mieszkanie-44-m-krakow-ID4vGJX
+2025-06-03 20:15:24,546 - INFO - Próba zapisania ogłoszenia 66896137 do Notion
+2025-06-03 20:15:24,546 - INFO - Dane do zapisania:
+2025-06-03 20:15:24,547 - INFO - title: Mieszkanie, 44 m², Kraków
+2025-06-03 20:15:24,547 - INFO - price: 650 000 zł
+2025-06-03 20:15:24,547 - INFO - address: ul. Wlotowa, Kozłówka, Bieżanów-Prokocim, Kraków, małopolskie
+2025-06-03 20:15:24,547 - INFO - area: 44.0 m²
+2025-06-03 20:15:24,547 - INFO - rooms: 2
+2025-06-03 20:15:24,547 - INFO - market: wtórny
+2025-06-03 20:15:24,547 - INFO - ad_id: 66896137
+2025-06-03 20:15:24,547 - INFO - url: https://www.otodom.pl/pl/oferta/mieszkanie-44-m-krakow-ID4vGJX
+2025-06-03 20:15:25,101 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:15:25,104 - INFO - Pomyślnie zapisano ogłoszenie 66896137 do Notion
+2025-06-03 20:15:25,106 - INFO - Pomyślnie zapisano ogłoszenie 66896137
+2025-06-03 20:15:28,092 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/bez-posrednikow-debiec-3-pokoje-i-pietro-niski-blok-oddzielna-kuchnia-ID4bIF7
+2025-06-03 20:15:32,305 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/bez-posrednikow-debiec-3-pokoje-i-pietro-niski-blok-oddzielna-kuchnia-ID4bIF7
+2025-06-03 20:15:32,305 - INFO - Status code: 200
+2025-06-03 20:15:32,305 - INFO - Content length: 362598
+2025-06-03 20:15:32,444 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:15:32,444 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/bez-posrednikow-debiec-3-pokoje-i-pietro-niski-blok-oddzielna-kuchnia-ID4bIF7
+2025-06-03 20:15:32,445 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:15:32,450 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:32,451 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:32,451 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:32,451 - INFO -   Tekst kontenera: Powierzchnia:44.63 m²
+2025-06-03 20:15:32,452 - INFO -     ✓ Znaleziono powierzchnię: 44.6 m²
+2025-06-03 20:15:32,452 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:15:32,457 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:32,458 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:32,458 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:32,459 - INFO -   Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:15:32,459 - INFO -     ✓ Znaleziono liczbę pokoi: 3
+2025-06-03 20:15:32,459 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:15:32,465 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:32,465 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:32,465 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:32,466 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:15:32,466 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:15:32,485 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:15:32,485 - INFO - Adres: ul. Dębowa, Dębiec, Wilda, Poznań, wielkopolskie
+2025-06-03 20:15:32,493 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:15:32,494 - INFO - Tytuł: BEZ POŚREDNIKÓW Dębiec 3 pokoje I piętro niski blok oddzielna kuchnia
+2025-06-03 20:15:32,508 - INFO - Znaleziono potencjalną cenę: 499 000 zł
+2025-06-03 20:15:32,509 - INFO - Zaakceptowano cenę: 499 000 zł
+2025-06-03 20:15:32,524 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:15:32,524 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:15:32,524 - INFO - title: BEZ POŚREDNIKÓW Dębiec 3 pokoje I piętro niski blok oddzielna kuchnia
+2025-06-03 20:15:32,525 - INFO - price: 499 000 zł
+2025-06-03 20:15:32,525 - INFO - address: ul. Dębowa, Dębiec, Wilda, Poznań, wielkopolskie
+2025-06-03 20:15:32,526 - INFO - area: 44.6 m²
+2025-06-03 20:15:32,526 - INFO - rooms: 3
+2025-06-03 20:15:32,526 - INFO - market: wtórny
+2025-06-03 20:15:32,527 - INFO - ad_id: 61898637
+2025-06-03 20:15:32,527 - INFO - url: https://www.otodom.pl/pl/oferta/bez-posrednikow-debiec-3-pokoje-i-pietro-niski-blok-oddzielna-kuchnia-ID4bIF7
+2025-06-03 20:15:32,527 - INFO - Próba zapisania ogłoszenia 61898637 do Notion
+2025-06-03 20:15:32,528 - INFO - Dane do zapisania:
+2025-06-03 20:15:32,528 - INFO - title: BEZ POŚREDNIKÓW Dębiec 3 pokoje I piętro niski blok oddzielna kuchnia
+2025-06-03 20:15:32,528 - INFO - price: 499 000 zł
+2025-06-03 20:15:32,529 - INFO - address: ul. Dębowa, Dębiec, Wilda, Poznań, wielkopolskie
+2025-06-03 20:15:32,529 - INFO - area: 44.6 m²
+2025-06-03 20:15:32,529 - INFO - rooms: 3
+2025-06-03 20:15:32,529 - INFO - market: wtórny
+2025-06-03 20:15:32,530 - INFO - ad_id: 61898637
+2025-06-03 20:15:32,530 - INFO - url: https://www.otodom.pl/pl/oferta/bez-posrednikow-debiec-3-pokoje-i-pietro-niski-blok-oddzielna-kuchnia-ID4bIF7
+2025-06-03 20:15:44,855 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:15:44,860 - INFO - Pomyślnie zapisano ogłoszenie 61898637 do Notion
+2025-06-03 20:15:44,860 - INFO - Pomyślnie zapisano ogłoszenie 61898637
+2025-06-03 20:15:48,784 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/borek-3-pokoje-63m2-winda-tramwaj-ID4vGWp
+2025-06-03 20:15:52,184 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/borek-3-pokoje-63m2-winda-tramwaj-ID4vGWp
+2025-06-03 20:15:52,186 - INFO - Status code: 200
+2025-06-03 20:15:52,187 - INFO - Content length: 362412
+2025-06-03 20:15:52,343 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:15:52,343 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/borek-3-pokoje-63m2-winda-tramwaj-ID4vGWp
+2025-06-03 20:15:52,344 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:15:52,349 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:52,349 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:52,350 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:15:52,350 - INFO -   Tekst kontenera: Powierzchnia:63 m²
+2025-06-03 20:15:52,351 - INFO -     ✓ Znaleziono powierzchnię: 63.0 m²
+2025-06-03 20:15:52,351 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:15:52,357 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:52,358 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:52,358 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:15:52,358 - INFO -   Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:15:52,359 - INFO -     ✓ Znaleziono liczbę pokoi: 3
+2025-06-03 20:15:52,359 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:15:52,364 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:52,365 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:15:52,365 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:15:52,366 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:15:52,366 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:15:52,384 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:15:52,385 - INFO - Adres: Przedmieście Świdnickie, Stare Miasto, Wrocław, dolnośląskie
+2025-06-03 20:15:52,393 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:15:52,393 - INFO - Tytuł: Borek/ 3 pokoje / 63m2 /Winda/Tramwaj
+2025-06-03 20:15:52,408 - INFO - Znaleziono potencjalną cenę: 679 999 zł
+2025-06-03 20:15:52,408 - INFO - Zaakceptowano cenę: 679 999 zł
+2025-06-03 20:15:52,422 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:15:52,422 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:15:52,423 - INFO - title: Borek/ 3 pokoje / 63m2 /Winda/Tramwaj
+2025-06-03 20:15:52,423 - INFO - price: 679 999 zł
+2025-06-03 20:15:52,424 - INFO - address: Przedmieście Świdnickie, Stare Miasto, Wrocław, dolnośląskie
+2025-06-03 20:15:52,424 - INFO - area: 63.0 m²
+2025-06-03 20:15:52,424 - INFO - rooms: 3
+2025-06-03 20:15:52,425 - INFO - market: wtórny
+2025-06-03 20:15:52,425 - INFO - ad_id: 66896847
+2025-06-03 20:15:52,425 - INFO - url: https://www.otodom.pl/pl/oferta/borek-3-pokoje-63m2-winda-tramwaj-ID4vGWp
+2025-06-03 20:15:52,426 - INFO - Próba zapisania ogłoszenia 66896847 do Notion
+2025-06-03 20:15:52,426 - INFO - Dane do zapisania:
+2025-06-03 20:15:52,426 - INFO - title: Borek/ 3 pokoje / 63m2 /Winda/Tramwaj
+2025-06-03 20:15:52,427 - INFO - price: 679 999 zł
+2025-06-03 20:15:52,427 - INFO - address: Przedmieście Świdnickie, Stare Miasto, Wrocław, dolnośląskie
+2025-06-03 20:15:52,427 - INFO - area: 63.0 m²
+2025-06-03 20:15:52,427 - INFO - rooms: 3
+2025-06-03 20:15:52,428 - INFO - market: wtórny
+2025-06-03 20:15:52,428 - INFO - ad_id: 66896847
+2025-06-03 20:15:52,428 - INFO - url: https://www.otodom.pl/pl/oferta/borek-3-pokoje-63m2-winda-tramwaj-ID4vGWp
+2025-06-03 20:15:52,998 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:15:53,002 - INFO - Pomyślnie zapisano ogłoszenie 66896847 do Notion
+2025-06-03 20:15:53,004 - INFO - Pomyślnie zapisano ogłoszenie 66896847
+2025-06-03 20:15:57,477 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/przestronne-3-pokoje-z-loggia-i-garazem-ID4vGWn
+2025-06-03 20:16:00,638 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/przestronne-3-pokoje-z-loggia-i-garazem-ID4vGWn
+2025-06-03 20:16:00,639 - INFO - Status code: 200
+2025-06-03 20:16:00,639 - INFO - Content length: 363526
+2025-06-03 20:16:00,800 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:16:00,800 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/przestronne-3-pokoje-z-loggia-i-garazem-ID4vGWn
+2025-06-03 20:16:00,801 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:16:00,806 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:00,806 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:00,807 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:00,807 - INFO -   Tekst kontenera: Powierzchnia:78 m²
+2025-06-03 20:16:00,807 - INFO -     ✓ Znaleziono powierzchnię: 78.0 m²
+2025-06-03 20:16:00,808 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:16:00,814 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:00,814 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:00,814 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:00,815 - INFO -   Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:16:00,815 - INFO -     ✓ Znaleziono liczbę pokoi: 3
+2025-06-03 20:16:00,816 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:16:00,822 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:00,822 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:00,823 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:00,823 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:16:00,823 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:16:00,840 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:16:00,841 - INFO - Adres: ul. Dęblińska, Gocławek, Praga-Południe, Warszawa, mazowieckie
+2025-06-03 20:16:00,849 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:16:00,849 - INFO - Tytuł: Przestronne 3 pokoje z loggią i garażem
+2025-06-03 20:16:00,863 - INFO - Znaleziono potencjalną cenę: 1 269 000 zł
+2025-06-03 20:16:00,864 - INFO - Zaakceptowano cenę: 1 269 000 zł
+2025-06-03 20:16:00,877 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:16:00,878 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:16:00,878 - INFO - title: Przestronne 3 pokoje z loggią i garażem
+2025-06-03 20:16:00,878 - INFO - price: 1 269 000 zł
+2025-06-03 20:16:00,879 - INFO - address: ul. Dęblińska, Gocławek, Praga-Południe, Warszawa, mazowieckie
+2025-06-03 20:16:00,879 - INFO - area: 78.0 m²
+2025-06-03 20:16:00,879 - INFO - rooms: 3
+2025-06-03 20:16:00,880 - INFO - market: wtórny
+2025-06-03 20:16:00,880 - INFO - ad_id: 66896845
+2025-06-03 20:16:00,880 - INFO - url: https://www.otodom.pl/pl/oferta/przestronne-3-pokoje-z-loggia-i-garazem-ID4vGWn
+2025-06-03 20:16:00,881 - INFO - Próba zapisania ogłoszenia 66896845 do Notion
+2025-06-03 20:16:00,881 - INFO - Dane do zapisania:
+2025-06-03 20:16:00,882 - INFO - title: Przestronne 3 pokoje z loggią i garażem
+2025-06-03 20:16:00,882 - INFO - price: 1 269 000 zł
+2025-06-03 20:16:00,882 - INFO - address: ul. Dęblińska, Gocławek, Praga-Południe, Warszawa, mazowieckie
+2025-06-03 20:16:00,883 - INFO - area: 78.0 m²
+2025-06-03 20:16:00,884 - INFO - rooms: 3
+2025-06-03 20:16:00,884 - INFO - market: wtórny
+2025-06-03 20:16:00,885 - INFO - ad_id: 66896845
+2025-06-03 20:16:00,885 - INFO - url: https://www.otodom.pl/pl/oferta/przestronne-3-pokoje-z-loggia-i-garazem-ID4vGWn
+2025-06-03 20:16:01,580 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:16:01,585 - INFO - Pomyślnie zapisano ogłoszenie 66896845 do Notion
+2025-06-03 20:16:01,585 - INFO - Pomyślnie zapisano ogłoszenie 66896845
+2025-06-03 20:16:04,280 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/bezposrednio-jasne-zadbane-3-pk-53-m2-metro-wilanowska-ID4v6zv
+2025-06-03 20:16:07,607 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/bezposrednio-jasne-zadbane-3-pk-53-m2-metro-wilanowska-ID4v6zv
+2025-06-03 20:16:07,607 - INFO - Status code: 200
+2025-06-03 20:16:07,608 - INFO - Content length: 360952
+2025-06-03 20:16:07,832 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:16:07,833 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/bezposrednio-jasne-zadbane-3-pk-53-m2-metro-wilanowska-ID4v6zv
+2025-06-03 20:16:07,833 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:16:07,838 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:07,839 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:07,839 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:07,839 - INFO -   Tekst kontenera: Powierzchnia:53.3 m²
+2025-06-03 20:16:07,840 - INFO -     ✓ Znaleziono powierzchnię: 53.3 m²
+2025-06-03 20:16:07,840 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:16:07,847 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:07,847 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:07,847 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:07,848 - INFO -   Tekst kontenera: Liczba pokoi:3
+2025-06-03 20:16:07,848 - INFO -     ✓ Znaleziono liczbę pokoi: 3
+2025-06-03 20:16:07,848 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:16:07,855 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:07,855 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:07,856 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:07,856 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:16:07,856 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:16:07,874 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:16:07,875 - INFO - Adres: ul. Zygmunta Modzelewskiego, Służew, Mokotów, Warszawa, mazowieckie
+2025-06-03 20:16:07,884 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:16:07,884 - INFO - Tytuł: Bezpośrednio! Jasne, zadbane 3-pk. 53 m2, Metro Wilanowska
+2025-06-03 20:16:07,898 - INFO - Znaleziono potencjalną cenę: 839 000 zł
+2025-06-03 20:16:07,898 - INFO - Zaakceptowano cenę: 839 000 zł
+2025-06-03 20:16:07,912 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:16:07,913 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:16:07,913 - INFO - title: Bezpośrednio! Jasne, zadbane 3-pk. 53 m2, Metro Wilanowska
+2025-06-03 20:16:07,914 - INFO - price: 839 000 zł
+2025-06-03 20:16:07,914 - INFO - address: ul. Zygmunta Modzelewskiego, Służew, Mokotów, Warszawa, mazowieckie
+2025-06-03 20:16:07,915 - INFO - area: 53.3 m²
+2025-06-03 20:16:07,915 - INFO - rooms: 3
+2025-06-03 20:16:07,916 - INFO - market: wtórny
+2025-06-03 20:16:07,916 - INFO - ad_id: 66757106
+2025-06-03 20:16:07,916 - INFO - url: https://www.otodom.pl/pl/oferta/bezposrednio-jasne-zadbane-3-pk-53-m2-metro-wilanowska-ID4v6zv
+2025-06-03 20:16:07,917 - INFO - Próba zapisania ogłoszenia 66757106 do Notion
+2025-06-03 20:16:07,918 - INFO - Dane do zapisania:
+2025-06-03 20:16:07,918 - INFO - title: Bezpośrednio! Jasne, zadbane 3-pk. 53 m2, Metro Wilanowska
+2025-06-03 20:16:07,918 - INFO - price: 839 000 zł
+2025-06-03 20:16:07,918 - INFO - address: ul. Zygmunta Modzelewskiego, Służew, Mokotów, Warszawa, mazowieckie
+2025-06-03 20:16:07,919 - INFO - area: 53.3 m²
+2025-06-03 20:16:07,919 - INFO - rooms: 3
+2025-06-03 20:16:07,919 - INFO - market: wtórny
+2025-06-03 20:16:07,920 - INFO - ad_id: 66757106
+2025-06-03 20:16:07,920 - INFO - url: https://www.otodom.pl/pl/oferta/bezposrednio-jasne-zadbane-3-pk-53-m2-metro-wilanowska-ID4v6zv
+2025-06-03 20:16:08,715 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:16:08,716 - INFO - Pomyślnie zapisano ogłoszenie 66757106 do Notion
+2025-06-03 20:16:08,716 - INFO - Pomyślnie zapisano ogłoszenie 66757106
+2025-06-03 20:16:12,849 - INFO - 
+Przetwarzanie ogłoszenia: https://www.otodom.pl/pl/oferta/przestronne-mieszkanie-w-ladku-zdroju-z-widokiem-na-gory-i-rzeke-ID4v6z1
+2025-06-03 20:16:16,724 - INFO - ✅ Pobrano stronę: https://www.otodom.pl/pl/oferta/przestronne-mieszkanie-w-ladku-zdroju-z-widokiem-na-gory-i-rzeke-ID4v6z1
+2025-06-03 20:16:16,724 - INFO - Status code: 200
+2025-06-03 20:16:16,725 - INFO - Content length: 357323
+2025-06-03 20:16:16,888 - INFO - ✅ Zapisano HTML do pliku debug_listing.html
+2025-06-03 20:16:16,889 - INFO - Parsowanie ogłoszenia z URL: https://www.otodom.pl/pl/oferta/przestronne-mieszkanie-w-ladku-zdroju-z-widokiem-na-gory-i-rzeke-ID4v6z1
+2025-06-03 20:16:16,889 - INFO - 
+🔍 Szukam area:
+2025-06-03 20:16:16,895 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:16,896 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:16,896 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Powierzchnia')
+2025-06-03 20:16:16,897 - INFO -   Tekst kontenera: Powierzchnia:60.73 m²
+2025-06-03 20:16:16,897 - INFO -     ✓ Znaleziono powierzchnię: 60.7 m²
+2025-06-03 20:16:16,897 - INFO - 
+🔍 Szukam rooms:
+2025-06-03 20:16:16,905 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:16,905 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:16,906 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Liczba pokoi')
+2025-06-03 20:16:16,906 - INFO -   Tekst kontenera: Liczba pokoi:4
+2025-06-03 20:16:16,906 - INFO -     ✓ Znaleziono liczbę pokoi: 4
+2025-06-03 20:16:16,907 - INFO - 
+🔍 Szukam market:
+2025-06-03 20:16:16,912 - INFO -   Próba użycia selektora kontenera: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:16,913 - INFO -   Znaleziono 1 kontenerów
+2025-06-03 20:16:16,913 - INFO -   ✓ Znaleziono kontener: div[data-sentry-element='ItemGridContainer'].css-1xw0jqp.esen0m91:-soup-contains('Rynek')
+2025-06-03 20:16:16,913 - INFO -   Tekst kontenera: Rynek:wtórny
+2025-06-03 20:16:16,914 - INFO -     ✓ Znaleziono rynek: wtórny
+2025-06-03 20:16:16,934 - INFO - Znaleziono adres używając selektora: a[href='#map']
+2025-06-03 20:16:16,934 - INFO - Adres: ul. Klonowa, Lądek-Zdrój, Lądek-Zdrój, kłodzki, dolnośląskie
+2025-06-03 20:16:16,944 - INFO - Znaleziono tytuł używając selektora: [data-cy='adPageAdTitle']
+2025-06-03 20:16:16,944 - INFO - Tytuł: Przestronne mieszkanie w Lądku-Zdroju z widokiem na góry i rzekę.
+2025-06-03 20:16:16,960 - INFO - Znaleziono potencjalną cenę: 330 000 zł
+2025-06-03 20:16:16,960 - INFO - Zaakceptowano cenę: 330 000 zł
+2025-06-03 20:16:16,976 - INFO - Znaleziono element ID używając selektora: p[data-sentry-element='DetailsProperty']
+2025-06-03 20:16:16,976 - INFO - Sparsowane dane ogłoszenia:
+2025-06-03 20:16:16,977 - INFO - title: Przestronne mieszkanie w Lądku-Zdroju z widokiem na góry i rzekę.
+2025-06-03 20:16:16,977 - INFO - price: 330 000 zł
+2025-06-03 20:16:16,977 - INFO - address: ul. Klonowa, Lądek-Zdrój, Lądek-Zdrój, kłodzki, dolnośląskie
+2025-06-03 20:16:16,978 - INFO - area: 60.7 m²
+2025-06-03 20:16:16,978 - INFO - rooms: 4
+2025-06-03 20:16:16,978 - INFO - market: wtórny
+2025-06-03 20:16:16,979 - INFO - ad_id: 66757075
+2025-06-03 20:16:16,979 - INFO - url: https://www.otodom.pl/pl/oferta/przestronne-mieszkanie-w-ladku-zdroju-z-widokiem-na-gory-i-rzeke-ID4v6z1
+2025-06-03 20:16:16,980 - INFO - Próba zapisania ogłoszenia 66757075 do Notion
+2025-06-03 20:16:16,980 - INFO - Dane do zapisania:
+2025-06-03 20:16:16,980 - INFO - title: Przestronne mieszkanie w Lądku-Zdroju z widokiem na góry i rzekę.
+2025-06-03 20:16:16,980 - INFO - price: 330 000 zł
+2025-06-03 20:16:16,981 - INFO - address: ul. Klonowa, Lądek-Zdrój, Lądek-Zdrój, kłodzki, dolnośląskie
+2025-06-03 20:16:16,981 - INFO - area: 60.7 m²
+2025-06-03 20:16:16,981 - INFO - rooms: 4
+2025-06-03 20:16:16,982 - INFO - market: wtórny
+2025-06-03 20:16:16,982 - INFO - ad_id: 66757075
+2025-06-03 20:16:16,982 - INFO - url: https://www.otodom.pl/pl/oferta/przestronne-mieszkanie-w-ladku-zdroju-z-widokiem-na-gory-i-rzeke-ID4v6z1
+2025-06-03 20:16:17,487 - INFO - HTTP Request: POST https://api.notion.com/v1/pages "HTTP/1.1 200 OK"
+2025-06-03 20:16:17,489 - INFO - Pomyślnie zapisano ogłoszenie 66757075 do Notion
+2025-06-03 20:16:17,490 - INFO - Pomyślnie zapisano ogłoszenie 66757075
