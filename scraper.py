@@ -186,12 +186,19 @@ def get_next_page_url(current_url: str, page_number: int) -> str:
 
 def extract_text_from_element(soup: BeautifulSoup, selector: str, attribute: str = None) -> str:
     """Ekstrahuje tekst z elementu HTML"""
-    element = soup.select_one(selector)
-    if element:
-        if attribute:
-            return element.get(attribute, "").strip()
-        return element.get_text().strip()
-    return ""
+    try:
+        element = soup.select_one(selector)
+        if element:
+            if attribute:
+                return element.get(attribute, "").strip()
+            # Usuń wszystkie style inline i klasy CSS
+            for tag in element.find_all(True):
+                tag.attrs = {}  # Usuń wszystkie atrybuty
+            return element.get_text(separator=' ', strip=True)
+        return ""
+    except Exception as e:
+        logging.error(f"Błąd podczas ekstrakcji tekstu: {str(e)}")
+        return ""
 
 def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
     """Parsuje szczegóły ogłoszenia"""
@@ -202,53 +209,74 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
             
         soup = BeautifulSoup(response.text, 'html5lib')
         
-        # Ekstrakcja ID ogłoszenia najpierw
-        ad_id = extract_text_from_element(soup, "p[data-sentry-element='DetailsProperty']")
+        # Ekstrakcja ID ogłoszenia
+        ad_id = extract_text_from_element(soup, "[data-cy='adPageAdId']")
+        if not ad_id:
+            ad_id = extract_text_from_element(soup, "p[data-sentry-element='DetailsProperty']")
         ad_id = ad_id.split(":")[-1].strip() if ad_id else ""
         
-        # Sprawdź czy ID istnieje w cache
         if ad_id in existing_ad_ids:
             logging.info(f"Ogłoszenie {ad_id} już istnieje w bazie. Pomijam.")
             return None
             
         # Ekstrakcja ceny
-        price = extract_text_from_element(soup, "strong[data-cy='adPageHeaderPrice']")
+        price = extract_text_from_element(soup, "[data-cy='adPageHeaderPrice']")
+        if not price:
+            price = extract_text_from_element(soup, "strong[data-cy='adPageHeaderPrice']")
+            
         if not is_valid_price(price):
             logging.info(f"Nieprawidłowa cena dla ogłoszenia {ad_id}. Pomijam.")
             return None
         
-        # Ekstrakcja pozostałych danych
-        title = extract_text_from_element(soup, "h1[data-cy='adPageAdTitle']")
-        address = extract_text_from_element(soup, "a[href='#map']")
+        # Ekstrakcja tytułu
+        title = extract_text_from_element(soup, "[data-cy='adPageAdTitle']")
+        if not title:
+            title = extract_text_from_element(soup, "h1[data-cy='adPageAdTitle']")
         
-        # Ekstrakcja powierzchni, liczby pokoi i rynku
-        area = ""
-        rooms = ""
-        market = ""
+        # Ekstrakcja adresu - próbujemy różne selektory
+        address = ""
+        address_selectors = [
+            "[aria-label='Adres']",
+            "[data-cy='adPageHeaderLocation']",
+            "a[href='#map']",
+            ".css-1hjw1az",
+            "div[data-testid='location-name']"
+        ]
         
-        details = soup.select("div[data-sentry-element='ItemGridContainer']")
-        for detail in details:
-            label = detail.select_one("p[data-sentry-element='Item']")
-            value = detail.select_one("p.esen0m92:last-child")
+        for selector in address_selectors:
+            address = extract_text_from_element(soup, selector)
+            if address and not address.startswith('.css'):
+                break
+        
+        # Ekstrakcja szczegółów
+        details = {}
+        detail_items = soup.select("div[data-cy='adPageAdditionalDetails'] div[data-testid='ad.top-information.table']")
+        
+        if not detail_items:
+            detail_items = soup.select("div[data-sentry-element='ItemGridContainer']")
+        
+        for item in detail_items:
+            label_elem = item.select_one("div:first-child")
+            value_elem = item.select_one("div:last-child")
             
-            if label and value:
-                label_text = label.get_text().strip()
-                value_text = value.get_text().strip()
+            if label_elem and value_elem:
+                label = label_elem.get_text(strip=True)
+                value = value_elem.get_text(strip=True)
                 
-                if "Powierzchnia" in label_text:
-                    area = value_text
-                elif "Liczba pokoi" in label_text:
-                    rooms = value_text
-                elif "Rynek" in label_text:
-                    market = value_text
+                if "Powierzchnia" in label:
+                    details["area"] = value
+                elif "Liczba pokoi" in label:
+                    details["rooms"] = value
+                elif "Rynek" in label:
+                    details["market"] = value
         
         return {
-            "title": title,
-            "price": price,
-            "address": address,
-            "area": area,
-            "rooms": rooms,
-            "market": market,
+            "title": title or "",
+            "price": price or "",
+            "address": address or "",
+            "area": details.get("area", ""),
+            "rooms": details.get("rooms", ""),
+            "market": details.get("market", ""),
             "ad_id": ad_id,
             "url": url
         }
