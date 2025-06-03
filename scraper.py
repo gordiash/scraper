@@ -1,6 +1,7 @@
 import os
 import time
 import random
+import logging
 from typing import Dict, Any, List, Optional
 from bs4 import BeautifulSoup
 import requests
@@ -9,8 +10,17 @@ from dotenv import load_dotenv
 from urllib.parse import urljoin, urlparse, parse_qs, urlencode
 from datetime import datetime
 
+# Konfiguracja logowania
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('scraper.log'),
+        logging.StreamHandler()
+    ]
+)
+
 # Załaduj zmienne środowiskowe
-print("Ładowanie zmiennych środowiskowych...")
 load_dotenv()
 
 # Konfiguracja
@@ -19,33 +29,31 @@ NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 BASE_URL = "https://www.otodom.pl"
 LISTINGS_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
 
-# Sprawdź konfigurację
-print(f"Sprawdzanie konfiguracji:")
-print(f"NOTION_API_KEY {'jest ustawiony' if NOTION_API_KEY else 'NIE jest ustawiony'}")
-print(f"NOTION_DATABASE_ID {'jest ustawiony' if NOTION_DATABASE_ID else 'NIE jest ustawiony'}")
+# Sprawdzenie konfiguracji
+if not NOTION_API_KEY:
+    logging.error("NOTION_API_KEY nie jest ustawiony!")
+    raise ValueError("NOTION_API_KEY nie jest ustawiony!")
 
-if not NOTION_API_KEY or not NOTION_DATABASE_ID:
-    raise ValueError("Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
+if not NOTION_DATABASE_ID:
+    logging.error("NOTION_DATABASE_ID nie jest ustawiony!")
+    raise ValueError("NOTION_DATABASE_ID nie jest ustawiony!")
+
+logging.info(f"NOTION_API_KEY length: {len(NOTION_API_KEY)}")
+logging.info(f"NOTION_DATABASE_ID length: {len(NOTION_DATABASE_ID)}")
 
 # Inicjalizacja klienta Notion
 try:
-    print("Inicjalizacja klienta Notion...")
     notion = Client(auth=NOTION_API_KEY)
-    # Sprawdź połączenie z bazą danych
-    notion.databases.retrieve(database_id=NOTION_DATABASE_ID)
-    print("Połączenie z bazą Notion zostało ustanowione pomyślnie")
+    # Test połączenia
+    notion.databases.retrieve(NOTION_DATABASE_ID)
+    logging.info("Połączenie z Notion zostało ustanowione pomyślnie")
 except Exception as e:
-    print(f"Błąd podczas inicjalizacji klienta Notion: {str(e)}")
+    logging.error(f"Błąd podczas inicjalizacji klienta Notion: {str(e)}")
     raise
-
-def get_current_date() -> str:
-    """Zwraca aktualną datę w formacie ISO"""
-    return datetime.now().date().isoformat()
 
 def get_existing_ad_ids() -> set:
     """Pobiera listę istniejących ID ogłoszeń z bazy Notion"""
     try:
-        print("Pobieranie istniejących ID z bazy Notion...")
         results = []
         has_more = True
         start_cursor = None
@@ -66,10 +74,10 @@ def get_existing_ad_ids() -> set:
             if has_more:
                 start_cursor = response["next_cursor"]
         
-        print(f"Pobrano {len(results)} istniejących ID z bazy")
+        logging.info(f"Pobrano {len(results)} istniejących ID z bazy Notion")
         return set(results)
     except Exception as e:
-        print(f"Błąd podczas pobierania istniejących ID: {str(e)}")
+        logging.error(f"Błąd podczas pobierania istniejących ID: {str(e)}")
         raise
 
 def is_valid_price(price: str) -> bool:
@@ -164,12 +172,14 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         print(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
         return None
 
+def get_current_date() -> str:
+    """Zwraca aktualną datę w formacie ISO"""
+    return datetime.now().date().isoformat()
+
 def save_to_notion(listing_data: Dict[str, Any]) -> None:
     """Zapisuje dane ogłoszenia do bazy Notion"""
     try:
-        print(f"\nPróba zapisania ogłoszenia {listing_data['ad_id']} do Notion...")
-        print(f"Dane do zapisu: {listing_data}")
-        
+        logging.info(f"Próba zapisania ogłoszenia {listing_data['ad_id']} do Notion")
         notion.pages.create(
             parent={"database_id": NOTION_DATABASE_ID},
             properties={
@@ -184,10 +194,10 @@ def save_to_notion(listing_data: Dict[str, Any]) -> None:
                 "Date": {"date": {"start": get_current_date()}}
             }
         )
-        print(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']} do Notion")
+        logging.info(f"Zapisano ogłoszenie {listing_data['ad_id']} do Notion")
     except Exception as e:
-        print(f"Błąd podczas zapisywania do Notion: {str(e)}")
-        print(f"Szczegóły błędu: {e.__class__.__name__}")
+        logging.error(f"Błąd podczas zapisywania do Notion: {str(e)}")
+        logging.error(f"Dane ogłoszenia: {listing_data}")
         raise
 
 def get_listing_links(page_url: str) -> List[str]:
@@ -213,39 +223,50 @@ def get_listing_links(page_url: str) -> List[str]:
 
 def scrape_listings():
     """Główna funkcja scrapująca"""
-    global existing_ad_ids
-    existing_ad_ids = get_existing_ad_ids()
-    print(f"Znaleziono {len(existing_ad_ids)} istniejących ogłoszeń w bazie")
-    
-    page_number = 1
-    total_listings = 0
-    
-    while True:
-        current_page_url = get_next_page_url(LISTINGS_URL, page_number)
-        print(f"\nPrzetwarzanie strony {page_number}: {current_page_url}")
+    try:
+        global existing_ad_ids
+        existing_ad_ids = get_existing_ad_ids()
+        logging.info(f"Znaleziono {len(existing_ad_ids)} istniejących ogłoszeń w bazie")
         
-        listing_links = get_listing_links(current_page_url)
+        page_number = 1
+        total_listings = 0
         
-        if not listing_links:
-            print(f"Nie znaleziono więcej ogłoszeń na stronie {page_number}. Kończenie...")
-            break
+        while True:
+            current_page_url = get_next_page_url(LISTINGS_URL, page_number)
+            logging.info(f"\nPrzetwarzanie strony {page_number}: {current_page_url}")
             
-        for link in listing_links:
-            print(f"\nPrzetwarzanie ogłoszenia: {link}")
-            listing_data = parse_listing_details(link)
+            listing_links = get_listing_links(current_page_url)
             
-            if listing_data:
-                save_to_notion(listing_data)
-                total_listings += 1
+            if not listing_links:
+                logging.info(f"Nie znaleziono więcej ogłoszeń na stronie {page_number}. Kończenie...")
+                break
+                
+            for link in listing_links:
+                logging.info(f"\nPrzetwarzanie ogłoszenia: {link}")
+                listing_data = parse_listing_details(link)
+                
+                if listing_data:
+                    save_to_notion(listing_data)
+                    total_listings += 1
+                
+                time.sleep(random.uniform(2, 5))
             
-            # Dodaj losowe opóźnienie między requestami
-            time.sleep(random.uniform(2, 5))
-        
-        print(f"\nZakończono stronę {page_number}. Zapisano {total_listings} ogłoszeń.")
-        page_number += 1
-        
-        # Dodaj opóźnienie między stronami
-        time.sleep(random.uniform(3, 7))
+            logging.info(f"\nZakończono stronę {page_number}. Zapisano {total_listings} ogłoszeń.")
+            page_number += 1
+            time.sleep(random.uniform(3, 7))
+            
+    except Exception as e:
+        logging.error(f"Błąd podczas scrapowania: {str(e)}")
+        raise
 
 if __name__ == "__main__":
-    scrape_listings() 
+    try:
+        logging.info("Rozpoczynanie scrapera...")
+        if not NOTION_API_KEY or not NOTION_DATABASE_ID:
+            logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
+            raise ValueError("Brak wymaganych zmiennych środowiskowych")
+        scrape_listings()
+        logging.info("Scraper zakończył działanie pomyślnie")
+    except Exception as e:
+        logging.error(f"Krytyczny błąd podczas działania scrapera: {str(e)}")
+        raise 

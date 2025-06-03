@@ -23,37 +23,30 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
+    - name: Create .env file
+      run: |
+        echo "NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}" > .env
+        echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}" >> .env
+        
     - name: Debug environment
       run: |
         echo "Python version:"
         python --version
-        echo "Pip version:"
-        pip --version
-        echo "Installed packages:"
-        pip list
-        echo "Current directory:"
-        pwd
-        echo "Directory contents:"
-        ls -la
-        
-    - name: Create and verify .env file
-      run: |
-        echo "Creating .env file..."
-        echo "NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}" > .env
-        echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}" >> .env
-        echo "Verifying .env file exists:"
+        echo "Checking .env file existence:"
         ls -la .env
-        echo "Checking .env file contents (masked):"
-        echo "NOTION_API_KEY=***"
-        echo "NOTION_DATABASE_ID=***"
+        echo "Checking if NOTION_API_KEY is set (length only):"
+        if [ -n "${{ secrets.NOTION_API_KEY }}" ]; then echo "NOTION_API_KEY length: ${#NOTION_API_KEY}"; else echo "NOTION_API_KEY is not set"; fi
+        echo "Checking if NOTION_DATABASE_ID is set (length only):"
+        if [ -n "${{ secrets.NOTION_DATABASE_ID }}" ]; then echo "NOTION_DATABASE_ID length: ${#NOTION_DATABASE_ID}"; else echo "NOTION_DATABASE_ID is not set"; fi
       
-    - name: Run scraper
+    - name: Run scraper with debug output
       run: |
         echo "Starting scraper..."
         python -u scraper.py
       env:
         NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        PYTHONUNBUFFERED: 1
       
     - name: Handle errors
       if: failure()
