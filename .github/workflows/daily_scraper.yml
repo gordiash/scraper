@@ -44,33 +44,48 @@ jobs:
     - name: Run scraper with debug output
       run: |
         echo "Starting scraper..."
-        python -u scraper.py 2>&1 | tee scraper_output.log
+        # Upewnij się, że katalog debug istnieje
+        mkdir -p debug
+        # Uruchom scraper i zapisz output do pliku
+        python -u scraper.py 2>&1 | tee debug/scraper_output.log
       env:
         NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
         NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
         PYTHONUNBUFFERED: 1
+        
+    - name: Prepare logs for upload
+      if: always()
+      run: |
+        # Utwórz katalog na logi
+        mkdir -p logs
+        # Skopiuj pliki logów jeśli istnieją
+        [ -f "scraper.log" ] && cp scraper.log logs/ || echo "scraper.log not found"
+        [ -f "debug/scraper_output.log" ] && cp debug/scraper_output.log logs/ || echo "scraper_output.log not found"
+        # Skopiuj pliki debug HTML jeśli istnieją
+        find . -name "debug_*.html" -exec cp {} logs/ \; || echo "No debug HTML files found"
+        # Lista znalezionych plików
+        echo "Files found for upload:"
+        ls -la logs/
         
     - name: Upload logs
       if: always()
       uses: actions/upload-artifact@v3
       with:
         name: scraper-logs
-        path: |
-          scraper.log
-          scraper_output.log
-          debug_*.html
+        path: logs/
+        if-no-files-found: warn
       
     - name: Handle errors
       if: failure()
       run: |
         echo "Scraper failed to run properly"
         echo "Checking logs for errors:"
-        if [ -f "scraper.log" ]; then
+        if [ -f "logs/scraper.log" ]; then
           echo "=== scraper.log ==="
-          cat scraper.log
+          cat logs/scraper.log
         fi
-        if [ -f "scraper_output.log" ]; then
+        if [ -f "logs/scraper_output.log" ]; then
           echo "=== scraper_output.log ==="
-          cat scraper_output.log
+          cat logs/scraper_output.log
         fi
         exit 1 
