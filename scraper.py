@@ -10,6 +10,7 @@ from urllib.parse import urljoin, urlparse, parse_qs, urlencode
 from datetime import datetime
 
 # Załaduj zmienne środowiskowe
+print("Ładowanie zmiennych środowiskowych...")
 load_dotenv()
 
 # Konfiguracja
@@ -18,12 +19,33 @@ NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 BASE_URL = "https://www.otodom.pl"
 LISTINGS_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
 
+# Sprawdź konfigurację
+print(f"Sprawdzanie konfiguracji:")
+print(f"NOTION_API_KEY {'jest ustawiony' if NOTION_API_KEY else 'NIE jest ustawiony'}")
+print(f"NOTION_DATABASE_ID {'jest ustawiony' if NOTION_DATABASE_ID else 'NIE jest ustawiony'}")
+
+if not NOTION_API_KEY or not NOTION_DATABASE_ID:
+    raise ValueError("Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
+
 # Inicjalizacja klienta Notion
-notion = Client(auth=NOTION_API_KEY)
+try:
+    print("Inicjalizacja klienta Notion...")
+    notion = Client(auth=NOTION_API_KEY)
+    # Sprawdź połączenie z bazą danych
+    notion.databases.retrieve(database_id=NOTION_DATABASE_ID)
+    print("Połączenie z bazą Notion zostało ustanowione pomyślnie")
+except Exception as e:
+    print(f"Błąd podczas inicjalizacji klienta Notion: {str(e)}")
+    raise
+
+def get_current_date() -> str:
+    """Zwraca aktualną datę w formacie ISO"""
+    return datetime.now().date().isoformat()
 
 def get_existing_ad_ids() -> set:
     """Pobiera listę istniejących ID ogłoszeń z bazy Notion"""
     try:
+        print("Pobieranie istniejących ID z bazy Notion...")
         results = []
         has_more = True
         start_cursor = None
@@ -44,10 +66,11 @@ def get_existing_ad_ids() -> set:
             if has_more:
                 start_cursor = response["next_cursor"]
         
+        print(f"Pobrano {len(results)} istniejących ID z bazy")
         return set(results)
     except Exception as e:
         print(f"Błąd podczas pobierania istniejących ID: {str(e)}")
-        return set()
+        raise
 
 def is_valid_price(price: str) -> bool:
     """Sprawdza czy cena jest poprawna"""
@@ -141,13 +164,12 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         print(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
         return None
 
-def get_current_date() -> str:
-    """Zwraca aktualną datę w formacie ISO"""
-    return datetime.now().date().isoformat()
-
 def save_to_notion(listing_data: Dict[str, Any]) -> None:
     """Zapisuje dane ogłoszenia do bazy Notion"""
     try:
+        print(f"\nPróba zapisania ogłoszenia {listing_data['ad_id']} do Notion...")
+        print(f"Dane do zapisu: {listing_data}")
+        
         notion.pages.create(
             parent={"database_id": NOTION_DATABASE_ID},
             properties={
@@ -162,9 +184,11 @@ def save_to_notion(listing_data: Dict[str, Any]) -> None:
                 "Date": {"date": {"start": get_current_date()}}
             }
         )
-        print(f"Zapisano ogłoszenie {listing_data['ad_id']} do Notion")
+        print(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']} do Notion")
     except Exception as e:
         print(f"Błąd podczas zapisywania do Notion: {str(e)}")
+        print(f"Szczegóły błędu: {e.__class__.__name__}")
+        raise
 
 def get_listing_links(page_url: str) -> List[str]:
     """Pobiera linki do ogłoszeń z danej strony"""
@@ -224,7 +248,4 @@ def scrape_listings():
         time.sleep(random.uniform(3, 7))
 
 if __name__ == "__main__":
-    if not NOTION_API_KEY or not NOTION_DATABASE_ID:
-        print("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
-    else:
-        scrape_listings() 
+    scrape_listings() 

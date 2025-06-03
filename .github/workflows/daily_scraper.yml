@@ -23,16 +23,44 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
         
-    - name: Create .env file
+    - name: Debug environment
       run: |
+        echo "Python version:"
+        python --version
+        echo "Pip version:"
+        pip --version
+        echo "Installed packages:"
+        pip list
+        echo "Current directory:"
+        pwd
+        echo "Directory contents:"
+        ls -la
+        
+    - name: Create and verify .env file
+      run: |
+        echo "Creating .env file..."
         echo "NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}" > .env
         echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}" >> .env
+        echo "Verifying .env file exists:"
+        ls -la .env
+        echo "Checking .env file contents (masked):"
+        echo "NOTION_API_KEY=***"
+        echo "NOTION_DATABASE_ID=***"
       
     - name: Run scraper
-      run: python scraper.py
+      run: |
+        echo "Starting scraper..."
+        python -u scraper.py
+      env:
+        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
       
     - name: Handle errors
       if: failure()
       run: |
         echo "Scraper failed to run properly"
+        echo "Checking logs for errors:"
+        if [ -f "error.log" ]; then
+          cat error.log
+        fi
         exit 1 
