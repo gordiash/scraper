@@ -1,0 +1,38 @@
+name: Daily OtoDom Scraper
+
+on:
+  schedule:
+    - cron: '0 1 * * *'  # Uruchamia się codziennie o 01:00 AM UTC
+  workflow_dispatch:  # Pozwala na ręczne uruchomienie
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.8'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Create .env file
+      run: |
+        echo "NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}" > .env
+        echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}" >> .env
+      
+    - name: Run scraper
+      run: python scraper.py
+      
+    - name: Handle errors
+      if: failure()
+      run: |
+        echo "Scraper failed to run properly"
+        exit 1 

@@ -11,6 +11,7 @@ Skrypt do automatycznego pobierania ogłoszeń mieszkaniowych z serwisu OtoDom i
 - Zapisywanie danych w bazie Notion
 - Obsługa limitów zapytań (delays między requestami)
 - Zapisywanie daty pobrania ogłoszenia
+- Automatyczne uruchamianie codziennie o 01:00 AM (GitHub Actions)
 
 ## Pobierane dane
 
@@ -30,6 +31,7 @@ Skrypt do automatycznego pobierania ogłoszeń mieszkaniowych z serwisu OtoDom i
 - Konto w Notion
 - Notion API Key
 - Baza danych w Notion z odpowiednią strukturą
+- (Opcjonalnie) Konto GitHub dla automatycznego uruchamiania
 
 ## Instalacja
 
@@ -69,7 +71,22 @@ NOTION_DATABASE_ID=id_twojej_bazy_danych
 5. Połącz bazę danych z integracją (Share -> Add connections)
 6. Skopiuj ID bazy danych z URL (32 znaki po nazwie workspace w URL)
 
-## Użycie
+## Automatyczne uruchamianie (GitHub Actions)
+
+Skrypt może być automatycznie uruchamiany codziennie o 01:00 AM UTC za pomocą GitHub Actions.
+
+Aby skonfigurować automatyczne uruchamianie:
+
+1. Utwórz fork tego repozytorium na GitHub
+2. Przejdź do Settings -> Secrets and variables -> Actions
+3. Dodaj następujące sekrety:
+   - `NOTION_API_KEY`: Twój klucz API Notion
+   - `NOTION_DATABASE_ID`: ID Twojej bazy danych Notion
+4. GitHub Actions automatycznie uruchomi scraper według harmonogramu
+
+Możesz też ręcznie uruchomić scraper poprzez zakładkę "Actions" w repozytorium.
+
+## Użycie lokalne
 
 Uruchom skrypt komendą:
 ```bash
@@ -89,9 +106,11 @@ Skrypt będzie:
 - Dodatkowe opóźnienia między stronami (3-7 sekund)
 - Proper User-Agent headers
 - Obsługa błędów i wyjątków
+- Bezpieczne przechowywanie kluczy w GitHub Secrets
 
 ## Uwagi
 
 - Upewnij się, że masz odpowiednie uprawnienia do bazy Notion
 - Sprawdź limity API Notion dla swojego konta
-- Regularnie monitoruj zmiany w strukturze strony OtoDom, które mogą wpłynąć na działanie scrapera 
+- Regularnie monitoruj zmiany w strukturze strony OtoDom, które mogą wpłynąć na działanie scrapera
+- GitHub Actions może mieć limity dla darmowych kont - sprawdź aktualną dokumentację GitHub 
