@@ -9,6 +9,8 @@ from notion_client import Client
 from dotenv import load_dotenv
 from urllib.parse import urljoin, urlparse, parse_qs, urlencode
 from datetime import datetime
+from fake_useragent import UserAgent
+import cloudscraper
 
 # Konfiguracja logowania
 logging.basicConfig(
@@ -28,6 +30,16 @@ NOTION_API_KEY = os.getenv('NOTION_API_KEY')
 NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 BASE_URL = "https://www.otodom.pl"
 LISTINGS_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
+
+# Lista proxy - możesz dodać więcej
+PROXY_LIST = [
+    None,  # Bez proxy
+    'http://proxy1.example.com:8080',  # Przykładowe proxy - zamień na działające
+    'http://proxy2.example.com:8080',
+]
+
+# Inicjalizacja generatora User-Agent
+ua = UserAgent()
 
 # Sprawdzenie konfiguracji
 if not NOTION_API_KEY:
@@ -84,11 +96,16 @@ def is_valid_price(price: str) -> bool:
     """Sprawdza czy cena jest poprawna"""
     return bool(price and price.strip() and "zł" in price)
 
+def get_random_proxy() -> Optional[Dict[str, str]]:
+    """Zwraca losowe proxy z listy"""
+    proxy = random.choice(PROXY_LIST)
+    return {'http': proxy, 'https': proxy} if proxy else None
+
 def get_headers() -> Dict[str, str]:
-    """Zwraca nagłówki dla requestów"""
+    """Zwraca nagłówki dla requestów z losowym User-Agent"""
     return {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
+        "User-Agent": ua.random,
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
         "Accept-Language": "pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7",
         "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
@@ -97,19 +114,35 @@ def get_headers() -> Dict[str, str]:
         "Sec-Fetch-Mode": "navigate",
         "Sec-Fetch-Site": "none",
         "Sec-Fetch-User": "?1",
-        "Cache-Control": "max-age=0"
+        "Cache-Control": "max-age=0",
+        "DNT": "1",
+        "Sec-Ch-Ua": '"Not_A Brand";v="8", "Chromium";v="120"',
+        "Sec-Ch-Ua-Mobile": "?0",
+        "Sec-Ch-Ua-Platform": '"Windows"'
     }
 
 def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Optional[requests.Response]:
     """Wykonuje request z obsługą błędów i ponownych prób"""
-    headers = get_headers()
-    session = requests.Session()
+    scraper = cloudscraper.create_scraper(
+        browser={
+            'browser': 'chrome',
+            'platform': 'windows',
+            'mobile': False
+        }
+    )
     
     for attempt in range(max_retries):
         try:
-            response = session.get(
+            headers = get_headers()
+            proxy = get_random_proxy()
+            
+            # Dodaj losowe opóźnienie przed requestem
+            time.sleep(random.uniform(2, 5))
+            
+            response = scraper.get(
                 url,
                 headers=headers,
+                proxies=proxy,
                 timeout=30,
                 allow_redirects=True
             )
@@ -123,7 +156,7 @@ def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Option
             response.raise_for_status()
             return response
             
-        except requests.RequestException as e:
+        except Exception as e:
             logging.error(f"Błąd podczas wykonywania requestu (próba {attempt + 1}/{max_retries}): {str(e)}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay * (attempt + 1))
@@ -159,7 +192,7 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         if not response:
             return None
             
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html5lib')
         
         # Ekstrakcja ID ogłoszenia najpierw
         ad_id = extract_text_from_element(soup, "p[data-sentry-element='DetailsProperty']")
@@ -251,27 +284,42 @@ def get_listing_links(page_url: str) -> List[str]:
             logging.error(f"Nie udało się pobrać strony: {page_url}")
             return []
             
-        soup = BeautifulSoup(response.text, 'html.parser')
+        soup = BeautifulSoup(response.text, 'html5lib')
+        
+        # Debug - zapisz HTML do pliku
+        with open('debug_page.html', 'w', encoding='utf-8') as f:
+            f.write(response.text)
         
         links = []
-        listing_cards = soup.select("a[data-cy='listing-item-link']")
+        # Próbuj różne selektory
+        selectors = [
+            "a[data-cy='listing-item-link']",
+            "a[href*='/oferta/']",
+            "article a[href*='/oferta/']",
+            ".css-1tiwk2i a",  # Przykładowy selektor CSS
+            "[data-cy='listing-item-link']",  # Dodatkowy selektor
+            ".offer-item",  # Dodatkowy selektor
+            ".css-14cy79a"  # Dodatkowy selektor
+        ]
         
-        if not listing_cards:
-            logging.warning(f"Nie znaleziono elementów ogłoszeń na stronie. Sprawdzanie alternatywnego selektora...")
-            # Spróbuj alternatywny selektor
-            listing_cards = soup.select("a[href*='/oferta/']")
+        for selector in selectors:
+            listing_cards = soup.select(selector)
+            if listing_cards:
+                logging.info(f"Znaleziono {len(listing_cards)} elementów używając selektora: {selector}")
+                break
         
         for card in listing_cards:
             href = card.get('href')
             if href and '/oferta/' in href:
                 full_url = urljoin(BASE_URL, href)
-                links.append(full_url)
+                if full_url not in links:  # Unikaj duplikatów
+                    links.append(full_url)
         
         if not links:
             logging.warning("Nie znaleziono żadnych linków do ogłoszeń")
-            logging.debug(f"HTML strony: {response.text[:500]}...")
+            logging.debug(f"HTML strony zapisano do debug_page.html")
         else:
-            logging.info(f"Znaleziono {len(links)} linków do ogłoszeń")
+            logging.info(f"Znaleziono {len(links)} unikalnych linków do ogłoszeń")
             
         return links
     except Exception as e:
