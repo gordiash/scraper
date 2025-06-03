@@ -209,40 +209,73 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
             
         soup = BeautifulSoup(response.text, 'html5lib')
         
+        # Debug - zapisz HTML do pliku
+        with open('debug_listing.html', 'w', encoding='utf-8') as f:
+            f.write(response.text)
+        
         # Ekstrakcja ID ogłoszenia
-        ad_id = extract_text_from_element(soup, "[data-cy='adPageAdId']")
+        ad_id = ""
+        ad_id_selectors = [
+            "[data-cy='adPageAdId']",
+            "p[data-sentry-element='DetailsProperty']",
+            "[data-testid='ad-id']"
+        ]
+        
+        for selector in ad_id_selectors:
+            ad_id = extract_text_from_element(soup, selector)
+            if ad_id:
+                ad_id = ad_id.split(":")[-1].strip()
+                break
+        
         if not ad_id:
-            ad_id = extract_text_from_element(soup, "p[data-sentry-element='DetailsProperty']")
-        ad_id = ad_id.split(":")[-1].strip() if ad_id else ""
+            # Próbuj wyciągnąć ID z URL
+            ad_id = url.split('/')[-1].split('.')[0]
         
         if ad_id in existing_ad_ids:
             logging.info(f"Ogłoszenie {ad_id} już istnieje w bazie. Pomijam.")
             return None
-            
+        
+        # Ekstrakcja tytułu
+        title_selectors = [
+            "[data-cy='adPageAdTitle']",
+            "h1[data-cy='adPageAdTitle']",
+            "h1.css-1wnihf5",
+            ".css-1wnihf5"
+        ]
+        
+        title = ""
+        for selector in title_selectors:
+            title = extract_text_from_element(soup, selector)
+            if title:
+                break
+        
         # Ekstrakcja ceny
-        price = extract_text_from_element(soup, "[data-cy='adPageHeaderPrice']")
-        if not price:
-            price = extract_text_from_element(soup, "strong[data-cy='adPageHeaderPrice']")
-            
+        price_selectors = [
+            "[data-cy='adPageHeaderPrice']",
+            "strong[data-cy='adPageHeaderPrice']",
+            ".css-8qi9av"
+        ]
+        
+        price = ""
+        for selector in price_selectors:
+            price = extract_text_from_element(soup, selector)
+            if is_valid_price(price):
+                break
+        
         if not is_valid_price(price):
             logging.info(f"Nieprawidłowa cena dla ogłoszenia {ad_id}. Pomijam.")
             return None
         
-        # Ekstrakcja tytułu
-        title = extract_text_from_element(soup, "[data-cy='adPageAdTitle']")
-        if not title:
-            title = extract_text_from_element(soup, "h1[data-cy='adPageAdTitle']")
-        
-        # Ekstrakcja adresu - próbujemy różne selektory
-        address = ""
+        # Ekstrakcja adresu
         address_selectors = [
             "[aria-label='Adres']",
             "[data-cy='adPageHeaderLocation']",
             "a[href='#map']",
-            ".css-1hjw1az",
-            "div[data-testid='location-name']"
+            "div[data-testid='location-name']",
+            ".css-1k13n9p"
         ]
         
+        address = ""
         for selector in address_selectors:
             address = extract_text_from_element(soup, selector)
             if address and not address.startswith('.css'):
@@ -250,27 +283,35 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
         
         # Ekstrakcja szczegółów
         details = {}
-        detail_items = soup.select("div[data-cy='adPageAdditionalDetails'] div[data-testid='ad.top-information.table']")
+        detail_selectors = [
+            "div[data-cy='adPageAdditionalDetails'] div[data-testid='ad.top-information.table']",
+            "div[data-testid='ad-details-table']",
+            "div[data-sentry-element='ItemGridContainer']"
+        ]
         
-        if not detail_items:
-            detail_items = soup.select("div[data-sentry-element='ItemGridContainer']")
-        
-        for item in detail_items:
-            label_elem = item.select_one("div:first-child")
-            value_elem = item.select_one("div:last-child")
-            
-            if label_elem and value_elem:
-                label = label_elem.get_text(strip=True)
-                value = value_elem.get_text(strip=True)
+        for selector in detail_selectors:
+            detail_items = soup.select(selector)
+            if detail_items:
+                for item in detail_items:
+                    label_elem = item.select_one("div:first-child, span:first-child")
+                    value_elem = item.select_one("div:last-child, span:last-child")
+                    
+                    if label_elem and value_elem:
+                        label = label_elem.get_text(strip=True)
+                        value = value_elem.get_text(strip=True)
+                        
+                        if any(keyword in label for keyword in ["Powierzchnia", "powierzchnia"]):
+                            details["area"] = value
+                        elif any(keyword in label for keyword in ["Liczba pokoi", "pokoje"]):
+                            details["rooms"] = value
+                        elif any(keyword in label for keyword in ["Rynek", "rynek"]):
+                            details["market"] = value
                 
-                if "Powierzchnia" in label:
-                    details["area"] = value
-                elif "Liczba pokoi" in label:
-                    details["rooms"] = value
-                elif "Rynek" in label:
-                    details["market"] = value
+                if details:  # Jeśli znaleźliśmy jakieś szczegóły, przerwij pętlę
+                    break
         
-        return {
+        # Przygotuj dane do zapisania
+        listing_data = {
             "title": title or "",
             "price": price or "",
             "address": address or "",
@@ -280,6 +321,14 @@ def parse_listing_details(url: str) -> Optional[Dict[str, Any]]:
             "ad_id": ad_id,
             "url": url
         }
+        
+        # Debug log
+        logging.info(f"Sparsowane dane ogłoszenia {ad_id}:")
+        for key, value in listing_data.items():
+            logging.info(f"{key}: {value}")
+        
+        return listing_data
+        
     except Exception as e:
         logging.error(f"Błąd podczas parsowania ogłoszenia {url}: {str(e)}")
         return None
@@ -292,21 +341,35 @@ def save_to_notion(listing_data: Dict[str, Any]) -> None:
     """Zapisuje dane ogłoszenia do bazy Notion"""
     try:
         logging.info(f"Próba zapisania ogłoszenia {listing_data['ad_id']} do Notion")
-        notion.pages.create(
+        
+        # Przygotuj dane w formacie Notion API
+        properties = {
+            "Title": {"title": [{"text": {"content": listing_data["title"]}}]},
+            "Price": {"rich_text": [{"text": {"content": listing_data["price"]}}]},
+            "Address": {"rich_text": [{"text": {"content": listing_data["address"]}}]},
+            "Area": {"rich_text": [{"text": {"content": listing_data["area"]}}]},
+            "Rooms": {"rich_text": [{"text": {"content": listing_data["rooms"]}}]},
+            "Market": {"rich_text": [{"text": {"content": listing_data["market"]}}]},
+            "Ad ID": {"rich_text": [{"text": {"content": listing_data["ad_id"]}}]},
+            "URL": {"url": listing_data["url"]},
+            "Date": {"date": {"start": get_current_date()}}
+        }
+        
+        # Sprawdź, czy wszystkie wymagane pola są obecne
+        for key, value in properties.items():
+            if key != "URL" and key != "Date":  # URL i Date mają inny format
+                if not value["rich_text"][0]["text"]["content"]:
+                    logging.warning(f"Brak wartości dla pola {key}")
+        
+        # Zapisz do Notion
+        response = notion.pages.create(
             parent={"database_id": NOTION_DATABASE_ID},
-            properties={
-                "Title": {"title": [{"text": {"content": listing_data["title"]}}]},
-                "Price": {"rich_text": [{"text": {"content": listing_data["price"]}}]},
-                "Address": {"rich_text": [{"text": {"content": listing_data["address"]}}]},
-                "Area": {"rich_text": [{"text": {"content": listing_data["area"]}}]},
-                "Rooms": {"rich_text": [{"text": {"content": listing_data["rooms"]}}]},
-                "Market": {"rich_text": [{"text": {"content": listing_data["market"]}}]},
-                "Ad ID": {"rich_text": [{"text": {"content": listing_data["ad_id"]}}]},
-                "URL": {"url": listing_data["url"]},
-                "Date": {"date": {"start": get_current_date()}}
-            }
+            properties=properties
         )
+        
         logging.info(f"Zapisano ogłoszenie {listing_data['ad_id']} do Notion")
+        logging.debug(f"Odpowiedź z Notion API: {response}")
+        
     except Exception as e:
         logging.error(f"Błąd podczas zapisywania do Notion: {str(e)}")
         logging.error(f"Dane ogłoszenia: {listing_data}")
