@@ -337,44 +337,6 @@ def get_current_date() -> str:
     """Zwraca aktualną datę w formacie ISO"""
     return datetime.now().date().isoformat()
 
-def save_to_notion(listing_data: Dict[str, Any]) -> None:
-    """Zapisuje dane ogłoszenia do bazy Notion"""
-    try:
-        logging.info(f"Próba zapisania ogłoszenia {listing_data['ad_id']} do Notion")
-        
-        # Przygotuj dane w formacie Notion API
-        properties = {
-            "Title": {"title": [{"text": {"content": listing_data["title"]}}]},
-            "Price": {"rich_text": [{"text": {"content": listing_data["price"]}}]},
-            "Address": {"rich_text": [{"text": {"content": listing_data["address"]}}]},
-            "Area": {"rich_text": [{"text": {"content": listing_data["area"]}}]},
-            "Rooms": {"rich_text": [{"text": {"content": listing_data["rooms"]}}]},
-            "Market": {"rich_text": [{"text": {"content": listing_data["market"]}}]},
-            "Ad ID": {"rich_text": [{"text": {"content": listing_data["ad_id"]}}]},
-            "URL": {"url": listing_data["url"]},
-            "Date": {"date": {"start": get_current_date()}}
-        }
-        
-        # Sprawdź, czy wszystkie wymagane pola są obecne
-        for key, value in properties.items():
-            if key != "URL" and key != "Date":  # URL i Date mają inny format
-                if not value["rich_text"][0]["text"]["content"]:
-                    logging.warning(f"Brak wartości dla pola {key}")
-        
-        # Zapisz do Notion
-        response = notion.pages.create(
-            parent={"database_id": NOTION_DATABASE_ID},
-            properties=properties
-        )
-        
-        logging.info(f"Zapisano ogłoszenie {listing_data['ad_id']} do Notion")
-        logging.debug(f"Odpowiedź z Notion API: {response}")
-        
-    except Exception as e:
-        logging.error(f"Błąd podczas zapisywania do Notion: {str(e)}")
-        logging.error(f"Dane ogłoszenia: {listing_data}")
-        raise
-
 def get_listing_links(page_url: str) -> List[str]:
     """Pobiera linki do ogłoszeń z danej strony"""
     try:
@@ -395,24 +357,27 @@ def get_listing_links(page_url: str) -> List[str]:
             "a[data-cy='listing-item-link']",
             "a[href*='/oferta/']",
             "article a[href*='/oferta/']",
-            ".css-1tiwk2i a",  # Przykładowy selektor CSS
-            "[data-cy='listing-item-link']",  # Dodatkowy selektor
-            ".offer-item",  # Dodatkowy selektor
-            ".css-14cy79a"  # Dodatkowy selektor
+            ".css-1tiwk2i a",
+            "[data-cy='listing-item-link']",
+            ".offer-item",
+            ".css-14cy79a",
+            "a[data-cy='listing-item-link']",
+            "a[href*='/pl/oferta/']"
         ]
         
         for selector in selectors:
             listing_cards = soup.select(selector)
             if listing_cards:
                 logging.info(f"Znaleziono {len(listing_cards)} elementów używając selektora: {selector}")
-                break
-        
-        for card in listing_cards:
-            href = card.get('href')
-            if href and '/oferta/' in href:
-                full_url = urljoin(BASE_URL, href)
-                if full_url not in links:  # Unikaj duplikatów
-                    links.append(full_url)
+                for card in listing_cards:
+                    href = card.get('href')
+                    if href:
+                        if not href.startswith('http'):
+                            href = urljoin(BASE_URL, href)
+                        if '/oferta/' in href and href not in links:
+                            links.append(href)
+                if links:
+                    break
         
         if not links:
             logging.warning("Nie znaleziono żadnych linków do ogłoszeń")
@@ -425,6 +390,115 @@ def get_listing_links(page_url: str) -> List[str]:
         logging.error(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
         return []
 
+def save_to_notion(listing_data: Dict[str, Any]) -> None:
+    """Zapisuje dane ogłoszenia do bazy Notion"""
+    try:
+        logging.info(f"Próba zapisania ogłoszenia {listing_data['ad_id']} do Notion")
+        logging.info("Dane do zapisania:")
+        for key, value in listing_data.items():
+            logging.info(f"{key}: {value}")
+
+        # Sprawdź czy wszystkie wymagane pola są obecne
+        required_fields = ["title", "price", "address", "area", "rooms", "market", "ad_id", "url"]
+        missing_fields = [field for field in required_fields if not listing_data.get(field)]
+        
+        if missing_fields:
+            logging.warning(f"Brakujące pola: {', '.join(missing_fields)}")
+            
+        # Przygotuj dane w formacie Notion API
+        properties = {
+            "Title": {
+                "title": [
+                    {
+                        "text": {
+                            "content": listing_data.get("title", "Brak tytułu")
+                        }
+                    }
+                ]
+            },
+            "Price": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("price", "")
+                        }
+                    }
+                ]
+            },
+            "Address": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("address", "")
+                        }
+                    }
+                ]
+            },
+            "Area": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("area", "")
+                        }
+                    }
+                ]
+            },
+            "Rooms": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("rooms", "")
+                        }
+                    }
+                ]
+            },
+            "Market": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("market", "")
+                        }
+                    }
+                ]
+            },
+            "Ad ID": {
+                "rich_text": [
+                    {
+                        "text": {
+                            "content": listing_data.get("ad_id", "")
+                        }
+                    }
+                ]
+            },
+            "URL": {
+                "url": listing_data.get("url", "")
+            },
+            "Date": {
+                "date": {
+                    "start": get_current_date()
+                }
+            }
+        }
+
+        # Zapisz do Notion
+        try:
+            response = notion.pages.create(
+                parent={"database_id": NOTION_DATABASE_ID},
+                properties=properties
+            )
+            logging.info(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']} do Notion")
+            logging.debug(f"Odpowiedź z Notion API: {response}")
+            return True
+        except Exception as notion_error:
+            logging.error(f"Błąd podczas zapisywania do Notion API: {str(notion_error)}")
+            if hasattr(notion_error, 'response'):
+                logging.error(f"Szczegóły błędu: {notion_error.response.text}")
+            return False
+            
+    except Exception as e:
+        logging.error(f"Błąd podczas przygotowywania danych do zapisu: {str(e)}")
+        return False
+
 def scrape_listings():
     """Główna funkcja scrapująca"""
     try:
@@ -434,8 +508,9 @@ def scrape_listings():
         
         page_number = 1
         total_listings = 0
+        max_pages = 100  # Limit stron do przeanalizowania
         
-        while True:
+        while page_number <= max_pages:
             current_page_url = get_next_page_url(LISTINGS_URL, page_number)
             logging.info(f"\nPrzetwarzanie strony {page_number}: {current_page_url}")
             
@@ -450,8 +525,11 @@ def scrape_listings():
                 listing_data = parse_listing_details(link)
                 
                 if listing_data:
-                    save_to_notion(listing_data)
-                    total_listings += 1
+                    if save_to_notion(listing_data):
+                        total_listings += 1
+                        logging.info(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']}")
+                    else:
+                        logging.error(f"Nie udało się zapisać ogłoszenia {listing_data['ad_id']}")
                 
                 time.sleep(random.uniform(2, 5))
             
