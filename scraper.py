@@ -5,7 +5,6 @@ import logging
 from typing import Dict, Any, List, Optional
 from bs4 import BeautifulSoup
 import requests
-from notion_client import Client
 from dotenv import load_dotenv
 from urllib.parse import urljoin, urlparse, parse_qs, urlencode
 from datetime import datetime
@@ -37,6 +36,7 @@ DB_SERVERNAME = os.getenv('DB_SERVERNAME')
 DB_USERNAME = os.getenv('DB_USERNAME')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
+DB_PORT = int(os.getenv('DB_PORT', 3306))
 
 # Lista proxy - możesz dodać więcej
 PROXY_LIST = [
@@ -49,14 +49,14 @@ PROXY_LIST = [
 ua = UserAgent()
 
 # Sprawdzenie konfiguracji
-if not DB_SERVERNAME or not DB_USERNAME or not DB_PASSWORD or not DB_NAME:
-    logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
-    raise ValueError("Brak wymaganych zmiennych środowiskowych")
+#if not DB_SERVERNAME or not DB_USERNAME or not DB_PASSWORD or not DB_NAME:
+   # logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
+    #raise ValueError("Brak wymaganych zmiennych środowiskowych")
 
-logging.info(f"DB_SERVERNAME length: {len(DB_SERVERNAME)}")
-logging.info(f"DB_USERNAME length: {len(DB_USERNAME)}")
-logging.info(f"DB_PASSWORD length: {len(DB_PASSWORD)}")
-logging.info(f"DB_NAME length: {len(DB_NAME)}")
+#logging.info(f"DB_SERVERNAME length: {len(DB_SERVERNAME)}")
+#logging.info(f"DB_USERNAME length: {len(DB_USERNAME)}")
+#logging.info(f"DB_PASSWORD length: {len(DB_PASSWORD)}")
+#logging.info(f"DB_NAME length: {len(DB_NAME)}")
 
 # Inicjalizacja połączenia z bazą danych
 try:
@@ -65,6 +65,7 @@ try:
         user=DB_USERNAME,
         password=DB_PASSWORD,
         database=DB_NAME,
+        port=DB_PORT,
         charset='utf8mb4',
         cursorclass=pymysql.cursors.DictCursor
     )
@@ -72,44 +73,6 @@ try:
 except Exception as e:
     logging.error(f'Błąd podczas łączenia z bazą danych: {str(e)}')
     db_conn = None
-
-# Przywracam zmienne środowiskowe Notion
-NOTION_API_KEY = os.getenv('NOTION_API_KEY')
-NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
-
-# Inicjalizacja klienta Notion
-try:
-    notion = Client(auth=NOTION_API_KEY)
-    notion.databases.retrieve(NOTION_DATABASE_ID)
-    logging.info("Połączenie z Notion zostało ustanowione pomyślnie")
-except Exception as e:
-    logging.error(f"Błąd podczas inicjalizacji klienta Notion: {str(e)}")
-    raise
-
-def get_existing_ad_ids() -> set:
-    """Pobiera listę istniejących ID ogłoszeń z bazy Notion"""
-    try:
-        results = []
-        has_more = True
-        start_cursor = None
-        while has_more:
-            response = notion.databases.query(
-                database_id=NOTION_DATABASE_ID,
-                start_cursor=start_cursor,
-                page_size=100
-            )
-            for page in response["results"]:
-                ad_id = page["properties"]["Ad ID"]["rich_text"]
-                if ad_id:
-                    results.append(ad_id[0]["text"]["content"])
-            has_more = response["has_more"]
-            if has_more:
-                start_cursor = response["next_cursor"]
-        logging.info(f"Pobrano {len(results)} istniejących ID z bazy Notion")
-        return set(results)
-    except Exception as e:
-        logging.error(f"Błąd podczas pobierania istniejących ID: {str(e)}")
-        return set()
 
 def is_valid_price(price: str) -> bool:
     """Sprawdza czy cena jest poprawna"""
@@ -579,45 +542,100 @@ def get_listing_links(page_url: str) -> List[str]:
         logging.error(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
         return []
 
-def save_to_notion(listing_data: dict) -> bool:
+def create_table_if_not_exists():
+    if db_conn is None:
+        logging.error('Brak połączenia z bazą danych!')
+        return
     try:
-        properties = {
-            "Title": {"title": [{"text": {"content": listing_data.get("title", "Brak tytułu")}}]},
-            "Price": {"rich_text": [{"text": {"content": listing_data.get("price", "")}}]},
-            "Address": {"rich_text": [{"text": {"content": listing_data.get("address", "")}}]},
-            "Area": {"rich_text": [{"text": {"content": listing_data.get("area", "")}}]},
-            "Rooms": {"rich_text": [{"text": {"content": listing_data.get("rooms", "")}}]},
-            "Market": {"rich_text": [{"text": {"content": listing_data.get("market", "")}}]},
-            "Ad ID": {"rich_text": [{"text": {"content": listing_data.get("ad_id", "")}}]},
-            "URL": {"url": listing_data.get("url", "")},
-            "Date": {"date": {"start": datetime.now().date().isoformat()}}
-        }
-        notion.pages.create(parent={"database_id": NOTION_DATABASE_ID}, properties=properties)
-        logging.info(f"Zapisano {listing_data.get('ad_id', '')} do Notion")
-        return True
+        with db_conn.cursor() as cursor:
+            create_table_sql = '''
+            CREATE TABLE IF NOT EXISTS listings (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ad_id VARCHAR(255) UNIQUE,
+                title TEXT,
+                price VARCHAR(255),
+                address TEXT,
+                area VARCHAR(255),
+                rooms VARCHAR(255),
+                market VARCHAR(255),
+                url TEXT,
+                date DATE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+            '''
+            cursor.execute(create_table_sql)
+        db_conn.commit()
+        logging.info('Tabela listings sprawdzona/utworzona.')
     except Exception as e:
-        logging.error(f"Błąd zapisu do Notion: {str(e)}")
+        import traceback
+        logging.error(f"Błąd przy tworzeniu tabeli: {str(e)}")
+        logging.error(traceback.format_exc())
+
+def save_to_db(listing_data: dict) -> bool:
+    try:
+        conn = pymysql.connect(
+            host=DB_SERVERNAME,
+            user=DB_USERNAME,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            port=DB_PORT,
+            charset='utf8mb4',
+            cursorclass=pymysql.cursors.DictCursor
+        )
+        with conn.cursor() as cursor:
+            insert_sql = '''
+            INSERT INTO listings (ad_id, title, price, address, area, rooms, market, url, date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                title=VALUES(title),
+                price=VALUES(price),
+                address=VALUES(address),
+                area=VALUES(area),
+                rooms=VALUES(rooms),
+                market=VALUES(market),
+                url=VALUES(url),
+                date=VALUES(date)
+            '''
+            logging.info(f"Próba zapisu rekordu: {listing_data}")
+            cursor.execute(insert_sql, (
+                listing_data.get('ad_id', ''),
+                listing_data.get('title', ''),
+                listing_data.get('price', ''),
+                listing_data.get('address', ''),
+                listing_data.get('area', ''),
+                listing_data.get('rooms', ''),
+                listing_data.get('market', ''),
+                listing_data.get('url', ''),
+                datetime.now().date()
+            ))
+            conn.commit()
+            logging.info(f"Zapisano {listing_data.get('ad_id', '')} do bazy danych")
+            return True
+    except Exception as e:
+        import traceback
+        logging.error(f"Błąd zapisu do bazy danych: {str(e)}")
+        logging.error(traceback.format_exc())
         return False
+    finally:
+        try:
+            conn.close()
+        except:
+            pass
 
 def process_listing(link):
     listing_data = parse_listing_details(link)
     if listing_data:
-        zapis_notion = save_to_notion(listing_data)
-        if zapis_notion:
-            logging.info(f"Zapisano {listing_data['ad_id']} do Notion")
+        zapis_db = save_to_db(listing_data)
+        if zapis_db:
+            logging.info(f"Zapisano {listing_data['ad_id']} do bazy danych")
         else:
-            logging.error(f"Błąd zapisu {listing_data['ad_id']} do Notion")
+            logging.error(f"Błąd zapisu {listing_data['ad_id']} do bazy danych")
 
 def scrape_listings():
     try:
-        global existing_ad_ids
-        existing_ad_ids = get_existing_ad_ids()
-        logging.info(f"Znaleziono {len(existing_ad_ids)} istniejących ogłoszeń w bazie")
-        
         page_number = 1
         total_listings = 0
         max_pages = 100  # Limit stron do przeanalizowania
-        max_workers = 8
+        max_workers = 4
         
         while page_number <= max_pages:
             current_page_url = get_next_page_url(LISTINGS_URL, page_number)
@@ -638,6 +656,24 @@ def scrape_listings():
         logging.error(f"Błąd podczas scrapowania: {str(e)}")
         raise
 
+def test_db_connection():
+    if db_conn is None:
+        logging.error('Brak połączenia z bazą danych!')
+        return False
+    try:
+        with db_conn.cursor() as cursor:
+            cursor.execute('SELECT 1')
+            result = cursor.fetchone()
+            if result:
+                logging.info('Test połączenia z bazą danych zakończony sukcesem.')
+                return True
+            else:
+                logging.error('Brak odpowiedzi z bazy danych.')
+                return False
+    except Exception as e:
+        logging.error(f'Błąd podczas testowania połączenia z bazą danych: {str(e)}')
+        return False
+
 if __name__ == "__main__":
     try:
         logging.info("Rozpoczynanie scrapera...")
@@ -645,8 +681,10 @@ if __name__ == "__main__":
             logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
             raise ValueError("Brak wymaganych zmiennych środowiskowych")
             
+        create_table_if_not_exists()
         scrape_listings()
         logging.info("Scraping zakończony pomyślnie")
+        test_db_connection()
     except Exception as e:
         logging.error(f"Krytyczny błąd podczas działania scrapera: {str(e)}")
         raise 

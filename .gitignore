@@ -1,2 +1,4 @@
 .env
 .cursorrules
+debug_*.*
+scraper.log
