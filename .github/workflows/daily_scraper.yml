@@ -25,8 +25,11 @@ jobs:
         
     - name: Create .env file
       run: |
-        echo "NOTION_API_KEY=${{ secrets.NOTION_API_KEY }}" > .env
-        echo "NOTION_DATABASE_ID=${{ secrets.NOTION_DATABASE_ID }}" >> .env
+        echo "DB_SERVERNAME=${{ secrets.DB_SERVERNAME }}" > .env
+        echo "DB_USERNAME=${{ secrets.DB_USERNAME }}" >> .env
+        echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+        echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+        echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
         
     - name: Debug environment
       run: |
@@ -34,23 +37,24 @@ jobs:
         python --version
         echo "Checking .env file existence:"
         ls -la .env
-        echo "Checking if NOTION_API_KEY is set (length only):"
-        if [ -n "${{ secrets.NOTION_API_KEY }}" ]; then echo "NOTION_API_KEY length: ${#NOTION_API_KEY}"; else echo "NOTION_API_KEY is not set"; fi
-        echo "Checking if NOTION_DATABASE_ID is set (length only):"
-        if [ -n "${{ secrets.NOTION_DATABASE_ID }}" ]; then echo "NOTION_DATABASE_ID length: ${#NOTION_DATABASE_ID}"; else echo "NOTION_DATABASE_ID is not set"; fi
+        echo "Checking if DB_SERVERNAME is set:"
+        if [ -n "${{ secrets.DB_SERVERNAME }}" ]; then echo "DB_SERVERNAME: ${{ secrets.DB_SERVERNAME }}"; else echo "DB_SERVERNAME is not set"; fi
+        echo "Checking if DB_USERNAME is set:"
+        if [ -n "${{ secrets.DB_USERNAME }}" ]; then echo "DB_USERNAME: ${{ secrets.DB_USERNAME }}"; else echo "DB_USERNAME is not set"; fi
         echo "Installed packages:"
         pip freeze
       
     - name: Run scraper with debug output
       run: |
         echo "Starting scraper..."
-        # Upewnij się, że katalog debug istnieje
         mkdir -p debug
-        # Uruchom scraper i zapisz output do pliku
         python -u scraper.py 2>&1 | tee debug/scraper_output.log
       env:
-        NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
-        NOTION_DATABASE_ID: ${{ secrets.NOTION_DATABASE_ID }}
+        DB_SERVERNAME: ${{ secrets.DB_SERVERNAME }}
+        DB_USERNAME: ${{ secrets.DB_USERNAME }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_PORT: ${{ secrets.DB_PORT }}
         PYTHONUNBUFFERED: 1
         
     - name: Prepare logs for upload
