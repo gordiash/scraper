@@ -12,6 +12,8 @@ from datetime import datetime
 from fake_useragent import UserAgent
 import cloudscraper
 import re
+import pymysql
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # Konfiguracja logowania
 logging.basicConfig(
@@ -27,10 +29,14 @@ logging.basicConfig(
 load_dotenv()
 
 # Konfiguracja
-NOTION_API_KEY = os.getenv('NOTION_API_KEY')
-NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 BASE_URL = "https://www.otodom.pl"
 LISTINGS_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
+
+# Konfiguracja bazy danych
+DB_SERVERNAME = os.getenv('DB_SERVERNAME')
+DB_USERNAME = os.getenv('DB_USERNAME')
+DB_PASSWORD = os.getenv('DB_PASSWORD')
+DB_NAME = os.getenv('DB_NAME')
 
 # Lista proxy - możesz dodać więcej
 PROXY_LIST = [
@@ -43,21 +49,37 @@ PROXY_LIST = [
 ua = UserAgent()
 
 # Sprawdzenie konfiguracji
-if not NOTION_API_KEY:
-    logging.error("NOTION_API_KEY nie jest ustawiony!")
-    raise ValueError("NOTION_API_KEY nie jest ustawiony!")
+if not DB_SERVERNAME or not DB_USERNAME or not DB_PASSWORD or not DB_NAME:
+    logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
+    raise ValueError("Brak wymaganych zmiennych środowiskowych")
 
-if not NOTION_DATABASE_ID:
-    logging.error("NOTION_DATABASE_ID nie jest ustawiony!")
-    raise ValueError("NOTION_DATABASE_ID nie jest ustawiony!")
+logging.info(f"DB_SERVERNAME length: {len(DB_SERVERNAME)}")
+logging.info(f"DB_USERNAME length: {len(DB_USERNAME)}")
+logging.info(f"DB_PASSWORD length: {len(DB_PASSWORD)}")
+logging.info(f"DB_NAME length: {len(DB_NAME)}")
 
-logging.info(f"NOTION_API_KEY length: {len(NOTION_API_KEY)}")
-logging.info(f"NOTION_DATABASE_ID length: {len(NOTION_DATABASE_ID)}")
+# Inicjalizacja połączenia z bazą danych
+try:
+    db_conn = pymysql.connect(
+        host=DB_SERVERNAME,
+        user=DB_USERNAME,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    logging.info('Połączenie z bazą danych zostało ustanowione pomyślnie')
+except Exception as e:
+    logging.error(f'Błąd podczas łączenia z bazą danych: {str(e)}')
+    db_conn = None
+
+# Przywracam zmienne środowiskowe Notion
+NOTION_API_KEY = os.getenv('NOTION_API_KEY')
+NOTION_DATABASE_ID = os.getenv('NOTION_DATABASE_ID')
 
 # Inicjalizacja klienta Notion
 try:
     notion = Client(auth=NOTION_API_KEY)
-    # Test połączenia
     notion.databases.retrieve(NOTION_DATABASE_ID)
     logging.info("Połączenie z Notion zostało ustanowione pomyślnie")
 except Exception as e:
@@ -70,28 +92,24 @@ def get_existing_ad_ids() -> set:
         results = []
         has_more = True
         start_cursor = None
-        
         while has_more:
             response = notion.databases.query(
                 database_id=NOTION_DATABASE_ID,
                 start_cursor=start_cursor,
                 page_size=100
             )
-            
             for page in response["results"]:
                 ad_id = page["properties"]["Ad ID"]["rich_text"]
                 if ad_id:
                     results.append(ad_id[0]["text"]["content"])
-            
             has_more = response["has_more"]
             if has_more:
                 start_cursor = response["next_cursor"]
-        
         logging.info(f"Pobrano {len(results)} istniejących ID z bazy Notion")
         return set(results)
     except Exception as e:
         logging.error(f"Błąd podczas pobierania istniejących ID: {str(e)}")
-        raise
+        return set()
 
 def is_valid_price(price: str) -> bool:
     """Sprawdza czy cena jest poprawna"""
@@ -561,117 +579,36 @@ def get_listing_links(page_url: str) -> List[str]:
         logging.error(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
         return []
 
-def save_to_notion(listing_data: Dict[str, Any]) -> None:
-    """Zapisuje dane ogłoszenia do bazy Notion"""
+def save_to_notion(listing_data: dict) -> bool:
     try:
-        logging.info(f"Próba zapisania ogłoszenia {listing_data['ad_id']} do Notion")
-        logging.info("Dane do zapisania:")
-        for key, value in listing_data.items():
-            logging.info(f"{key}: {value}")
-
-        # Sprawdź czy wszystkie wymagane pola są obecne
-        required_fields = ["title", "price", "address", "area", "rooms", "market", "ad_id", "url"]
-        missing_fields = [field for field in required_fields if not listing_data.get(field)]
-        
-        if missing_fields:
-            logging.warning(f"Brakujące pola: {', '.join(missing_fields)}")
-            
-        # Przygotuj dane w formacie Notion API
         properties = {
-            "Title": {
-                "title": [
-                    {
-                        "text": {
-                            "content": listing_data.get("title", "Brak tytułu")
-                        }
-                    }
-                ]
-            },
-            "Price": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("price", "")
-                        }
-                    }
-                ]
-            },
-            "Address": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("address", "")
-                        }
-                    }
-                ]
-            },
-            "Area": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("area", "")
-                        }
-                    }
-                ]
-            },
-            "Rooms": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("rooms", "")
-                        }
-                    }
-                ]
-            },
-            "Market": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("market", "")
-                        }
-                    }
-                ]
-            },
-            "Ad ID": {
-                "rich_text": [
-                    {
-                        "text": {
-                            "content": listing_data.get("ad_id", "")
-                        }
-                    }
-                ]
-            },
-            "URL": {
-                "url": listing_data.get("url", "")
-            },
-            "Date": {
-                "date": {
-                    "start": get_current_date()
-                }
-            }
+            "Title": {"title": [{"text": {"content": listing_data.get("title", "Brak tytułu")}}]},
+            "Price": {"rich_text": [{"text": {"content": listing_data.get("price", "")}}]},
+            "Address": {"rich_text": [{"text": {"content": listing_data.get("address", "")}}]},
+            "Area": {"rich_text": [{"text": {"content": listing_data.get("area", "")}}]},
+            "Rooms": {"rich_text": [{"text": {"content": listing_data.get("rooms", "")}}]},
+            "Market": {"rich_text": [{"text": {"content": listing_data.get("market", "")}}]},
+            "Ad ID": {"rich_text": [{"text": {"content": listing_data.get("ad_id", "")}}]},
+            "URL": {"url": listing_data.get("url", "")},
+            "Date": {"date": {"start": datetime.now().date().isoformat()}}
         }
-
-        # Zapisz do Notion
-        try:
-            response = notion.pages.create(
-                parent={"database_id": NOTION_DATABASE_ID},
-                properties=properties
-            )
-            logging.info(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']} do Notion")
-            logging.debug(f"Odpowiedź z Notion API: {response}")
-            return True
-        except Exception as notion_error:
-            logging.error(f"Błąd podczas zapisywania do Notion API: {str(notion_error)}")
-            if hasattr(notion_error, 'response'):
-                logging.error(f"Szczegóły błędu: {notion_error.response.text}")
-            return False
-            
+        notion.pages.create(parent={"database_id": NOTION_DATABASE_ID}, properties=properties)
+        logging.info(f"Zapisano {listing_data.get('ad_id', '')} do Notion")
+        return True
     except Exception as e:
-        logging.error(f"Błąd podczas przygotowywania danych do zapisu: {str(e)}")
+        logging.error(f"Błąd zapisu do Notion: {str(e)}")
         return False
 
+def process_listing(link):
+    listing_data = parse_listing_details(link)
+    if listing_data:
+        zapis_notion = save_to_notion(listing_data)
+        if zapis_notion:
+            logging.info(f"Zapisano {listing_data['ad_id']} do Notion")
+        else:
+            logging.error(f"Błąd zapisu {listing_data['ad_id']} do Notion")
+
 def scrape_listings():
-    """Główna funkcja scrapująca"""
     try:
         global existing_ad_ids
         existing_ad_ids = get_existing_ad_ids()
@@ -680,212 +617,31 @@ def scrape_listings():
         page_number = 1
         total_listings = 0
         max_pages = 100  # Limit stron do przeanalizowania
+        max_workers = 8
         
         while page_number <= max_pages:
             current_page_url = get_next_page_url(LISTINGS_URL, page_number)
-            logging.info(f"\nPrzetwarzanie strony {page_number}: {current_page_url}")
-            
+            logging.info(f"Strona {page_number}: {current_page_url}")
             listing_links = get_listing_links(current_page_url)
-            
             if not listing_links:
-                logging.info(f"Nie znaleziono więcej ogłoszeń na stronie {page_number}. Kończenie...")
+                logging.info(f"Brak ogłoszeń na stronie {page_number}. Kończę...")
                 break
-                
-            for link in listing_links:
-                logging.info(f"\nPrzetwarzanie ogłoszenia: {link}")
-                listing_data = parse_listing_details(link)
-                
-                if listing_data:
-                    if save_to_notion(listing_data):
-                        total_listings += 1
-                        logging.info(f"Pomyślnie zapisano ogłoszenie {listing_data['ad_id']}")
-                    else:
-                        logging.error(f"Nie udało się zapisać ogłoszenia {listing_data['ad_id']}")
-                
-                time.sleep(random.uniform(2, 5))
-            
-            logging.info(f"\nZakończono stronę {page_number}. Zapisano {total_listings} ogłoszeń.")
+            with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                futures = [executor.submit(process_listing, link) for link in listing_links]
+                for future in as_completed(futures):
+                    pass  # Możesz dodać obsługę wyjątków jeśli chcesz
+            total_listings += len(listing_links)
+            logging.info(f"Zakończono stronę {page_number}. Łącznie zapisano {total_listings} ogłoszeń.")
             page_number += 1
-            time.sleep(random.uniform(3, 7))
-            
+            time.sleep(random.uniform(0.1, 0.3))
     except Exception as e:
         logging.error(f"Błąd podczas scrapowania: {str(e)}")
         raise
 
-def test_selectors_on_page(soup: BeautifulSoup) -> Dict[str, str]:
-    """Testuje selektory na stronie ogłoszenia i zwraca znalezione dane"""
-    results = {}
-    
-    # Selektory dla różnych elementów
-    selectors = {
-        'area': {
-            'containers': [
-                "div:-soup-contains('Powierzchnia') + div",
-                "div:-soup-contains('powierzchnia') + div",
-                "div[data-testid='ad.top-information.table'] div:-soup-contains('Powierzchnia') + div",
-                "div.css-1k13n9p div:-soup-contains('Powierzchnia') + div",
-                "[data-testid='ad-info'] div:-soup-contains('Powierzchnia')",
-                "div[data-cy='adPageAdInfo'] div:-soup-contains('Powierzchnia')",
-                "div.css-1qzl8qx",  # Nowy selektor dla rynku pierwotnego
-                "div.css-1k13n9p"   # Nowy selektor dla rynku pierwotnego
-            ],
-            'value_selectors': [
-                "p.esen0m92.css-1airkmu:last-child",
-                "div.css-1wi2w6s",
-                "span.css-1wi2w6s",
-                "strong",
-                ".css-1wi2w6s",
-                ".css-1airkmu",
-                "div[data-testid='ad-info'] div:-soup-contains('Powierzchnia')",
-                "div.css-1qzl8qx"  # Nowy selektor dla rynku pierwotnego
-            ]
-        },
-        'rooms': {
-            'containers': [
-                "div:-soup-contains('Liczba pokoi') + div",
-                "div:-soup-contains('pokoje') + div",
-                "div[data-testid='ad.top-information.table'] div:-soup-contains('Liczba pokoi') + div",
-                "div.css-1k13n9p div:-soup-contains('Liczba pokoi') + div",
-                "[data-testid='ad-info'] div:-soup-contains('Liczba pokoi')",
-                "div[data-cy='adPageAdInfo'] div:-soup-contains('Liczba pokoi')",
-                "div.css-1qzl8qx",  # Nowy selektor dla rynku pierwotnego
-                "div.css-1k13n9p"   # Nowy selektor dla rynku pierwotnego
-            ],
-            'value_selectors': [
-                "p.esen0m92.css-1airkmu:last-child",
-                "div.css-1wi2w6s",
-                "span.css-1wi2w6s",
-                "strong",
-                ".css-1wi2w6s",
-                ".css-1airkmu",
-                "div[data-testid='ad-info'] div:-soup-contains('Liczba pokoi')",
-                "div.css-1qzl8qx"  # Nowy selektor dla rynku pierwotnego
-            ]
-        },
-        'market': {
-            'containers': [
-                "div:-soup-contains('Rynek') + div",
-                "div:-soup-contains('Typ rynku') + div",
-                "div[data-testid='ad.top-information.table'] div:-soup-contains('Rynek') + div",
-                "div.css-1k13n9p div:-soup-contains('Rynek') + div",
-                "[data-testid='ad-info'] div:-soup-contains('Rynek')",
-                "div[data-cy='adPageAdInfo'] div:-soup-contains('Rynek')",
-                "div.css-1qzl8qx",  # Nowy selektor dla rynku pierwotnego
-                "div.css-1k13n9p"   # Nowy selektor dla rynku pierwotnego
-            ],
-            'value_selectors': [
-                "p.esen0m92.css-1airkmu:last-child",
-                "div.css-1wi2w6s",
-                "span.css-1wi2w6s",
-                "strong",
-                ".css-1wi2w6s",
-                ".css-1airkmu",
-                "div[data-testid='ad-info'] div:-soup-contains('Rynek')",
-                "div.css-1qzl8qx"  # Nowy selektor dla rynku pierwotnego
-            ]
-        }
-    }
-    
-    for field, field_selectors in selectors.items():
-        logging.info(f"\n🔍 Szukam {field}:")
-        
-        for container_selector in field_selectors['containers']:
-            try:
-                container = soup.select_one(container_selector)
-                if container:
-                    logging.info(f"  ✓ Znaleziono kontener: {container_selector}")
-                    
-                    for value_selector in field_selectors['value_selectors']:
-                        try:
-                            # Próbujemy znaleźć wartość względem kontenera
-                            value_element = container.select_one(value_selector)
-                            
-                            if value_element:
-                                value = clean_text(value_element.text)
-                                logging.info(f"    ✓ Znaleziono wartość: {value} (selektor: {value_selector})")
-                                
-                                # Walidacja i formatowanie wartości
-                                if field == 'area' and 'm²' in value:
-                                    area_value = float(re.search(r'(\d+[.,]?\d*)', value.replace(',', '.')).group(1))
-                                    if area_value > 0:
-                                        results[field] = f"{area_value:.1f} m²"
-                                        break
-                                elif field == 'rooms' and any(char.isdigit() for char in value):
-                                    rooms_value = int(re.search(r'(\d+)', value).group(1))
-                                    if rooms_value > 0:
-                                        results[field] = str(rooms_value)
-                                        break
-                                elif field == 'market':
-                                    results[field] = value
-                                    break
-                            
-                        except Exception as e:
-                            logging.debug(f"    ⚠ Błąd przy próbie użycia selektora {value_selector}: {str(e)}")
-                            continue
-                    
-                    if field in results:
-                        break
-                        
-            except Exception as e:
-                logging.debug(f"  ⚠ Błąd przy próbie użycia selektora kontenera {container_selector}: {str(e)}")
-                continue
-        
-        if field not in results:
-            logging.warning(f"❌ Nie udało się znaleźć {field}")
-        else:
-            logging.info(f"✅ Znaleziono {field}: {results[field]}")
-    
-    return results
-
-def test_url_scraping(url: str) -> None:
-    """Testuje scrapowanie danych z podanego URL"""
-    logging.info(f"\n{'='*80}\nTestuję scrapowanie URL: {url}\n{'='*80}")
-    
-    try:
-        # Inicjalizacja zmiennej existing_ad_ids jako pustego zbioru dla testów
-        global existing_ad_ids
-        existing_ad_ids = set()
-        
-        # Pobierz stronę
-        response = make_request(url)
-        if not response:
-            logging.error("❌ Nie udało się pobrać strony!")
-            return
-            
-        logging.info("✅ Strona pobrana pomyślnie")
-            
-        # Parsuj HTML
-        soup = BeautifulSoup(response.text, 'html5lib')
-        
-        # Zapisz HTML do pliku (do debugowania)
-        with open('debug_test.html', 'w', encoding='utf-8') as f:
-            f.write(response.text)
-        logging.info("✅ Zapisano HTML do pliku debug_test.html")
-        
-        # Testuj parsowanie danych
-        listing_data = parse_listing_details(url)
-        
-        if listing_data:
-            logging.info("\n📊 Podsumowanie wyników parsowania:")
-            logging.info("-" * 40)
-            for field, value in listing_data.items():
-                if value:
-                    logging.info(f"✅ {field}: {value}")
-                else:
-                    logging.info(f"❌ {field}: Brak danych")
-            logging.info("-" * 40)
-        else:
-            logging.error("❌ Nie udało się sparsować danych z ogłoszenia!")
-            
-    except Exception as e:
-        logging.error(f"❌ Błąd podczas testowania URL: {str(e)}")
-        import traceback
-        logging.error(f"Szczegóły błędu:\n{traceback.format_exc()}")
-
 if __name__ == "__main__":
     try:
         logging.info("Rozpoczynanie scrapera...")
-        if not NOTION_API_KEY or not NOTION_DATABASE_ID:
+        if not DB_SERVERNAME or not DB_USERNAME or not DB_PASSWORD or not DB_NAME:
             logging.error("Błąd: Brak wymaganych zmiennych środowiskowych. Sprawdź plik .env")
             raise ValueError("Brak wymaganych zmiennych środowiskowych")
             
