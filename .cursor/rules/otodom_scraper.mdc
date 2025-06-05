@@ -1,0 +1,37 @@
+---
+description: 
+globs: *.py,*.tsx,*.html
+alwaysApply: false
+---
+# Otodom Scraper – Cursor Rules
+
+## Struktura projektu
+
+- Główny skrypt scrapera: [scraper.py](mdc:scraper.py) – zawiera logikę pobierania ogłoszeń, parsowania, obsługi błędów, logowania oraz zapisywania danych w bazie (wraz z odświeżaniem połączenia oraz paginacją do ostatniej strony).
+- Konfiguracja parametrów (User Rules): [user_rules.py](mdc:user_rules.py) – zawiera ustawienia (np. opóźnienia, liczba wątków, proxy, konfiguracja bazy, logowanie, URL-e, plik postępu, parametry parsowania) oraz funkcje pomocnicze (np. get_random_delay, get_db_config, get_log_config, get_urls, get_proxy_list, get_parsing_config, get_max_workers, get_max_retries, get_request_timeout, get_progress_file).
+- Plik z zależnościami: [requirements.txt](mdc:requirements.txt) – zawiera listę bibliotek (np. requests, BeautifulSoup, fake-useragent, cloudscraper, pymysql, dotenv, itp.).
+- Plik README: [README.md](mdc:README.md) – opisuje funkcjonalności, wymagania, instalację oraz konfigurację (np. bazy Notion, automatyczne uruchamianie).
+- Plik testowy połączenia z bazą: [test_mysql.py](mdc:test_mysql.py) – sprawdza połączenie z bazą danych (np. odczyt zmiennych środowiskowych, połączenie pymysql).
+- Plik postępu (progress.txt) – zapisuje numer ostatnio przetworzonej strony, aby scraper mógł wznowić scrapowanie od tego miejsca w razie rozłączenia lub błędu.
+- Plik logów (scraper.log) – zapisuje logi (np. informacje, ostrzeżenia, błędy) zgodnie z konfiguracją logowania (np. poziom INFO, format, plik).
+- Plik .env – przechowuje zmienne środowiskowe (np. DB_SERVERNAME, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT) – nie jest wersjonowany (zob. .gitignore).
+
+## Konwencje oraz workflow
+
+- **Scrapowanie:**  
+  – Używaj funkcji (np. make_request, get_listing_links, parse_listing_details) z obsługą błędów oraz ponownych prób (np. max_retries, retry_delay, opóźnienia między requestami).  
+  – Wykorzystuj (np. w scrape_listings) paginację (przechodzenie na kolejne strony) aż do ostatniej strony (gdy brak ogłoszeń) oraz zapisuj postęp (np. save_progress, load_progress) w pliku (np. progress.txt) aby wznawiać scrapowanie od ostatniego miejsca.  
+  – W razie rozłączenia z bazą (np. po 1h) wywołuj (np. w create_table_if_not_exists, test_db_connection) funkcję refresh_db_connection (db_conn.ping(reconnect=True) lub ponowne połączenie) aby odświeżyć połączenie.
+
+- **Obsługa błędów oraz logowanie:**  
+  – Wszystkie funkcje (np. make_request, parse_listing_details, scrape_listings, save_to_db, create_table_if_not_exists, test_db_connection) powinny obsługiwać wyjątki (np. logging.error, traceback) oraz logować (np. logging.info, logging.warning) informacje (np. pobranie strony, zapis rekordu, odświeżenie połączenia, błąd zapisu, itp.).  
+  – W razie błędu (np. rozłączenie z bazą, błąd zapisu, błąd scrapowania) scraper zapisuje postęp (np. save_progress) aby wznowić od ostatniego miejsca.
+
+- **Modularność oraz konfiguracja:**  
+  – Wszystkie parametry (np. opóźnienia, liczba wątków, proxy, konfiguracja bazy, logowanie, URL-e, plik postępu, parametry parsowania) są zdefiniowane w pliku [user_rules.py](mdc:user_rules.py) (np. SCRAPING_CONFIG) oraz udostępniane przez funkcje pomocnicze (np. get_random_delay, get_db_config, get_log_config, get_urls, get_proxy_list, get_parsing_config, get_max_workers, get_max_retries, get_request_timeout, get_progress_file).  
+  – W pliku [scraper.py](mdc:scraper.py) (np. import z user_rules) wykorzystuj te funkcje (np. get_delay_between_pages, get_delay_between_requests, get_db_config, get_log_config, get_urls, get_proxy_list, get_parsing_config, get_max_workers, get_max_retries, get_request_timeout, get_progress_file) aby dostosować (np. opóźnienia, liczba wątków, proxy, konfiguracja bazy, logowanie, URL-e, plik postępu, parametry parsowania) scrapera.
+
+- **Wersjonowanie oraz dokumentacja:**  
+  – Używaj (np. git) wersjonowania (np. commit, push, pull) aby śledzić zmiany (np. w plikach scraper.py, user_rules.py, requirements.txt, README.md, test_mysql.py, itp.).  
+  – Dokumentuj (np. w README.md, w docstringach funkcji) funkcjonalności, wymagania, instalację, konfigurację (np. bazy Notion, automatyczne uruchamianie) oraz konwencje (np. scrapowanie, obsługa błędów, logowanie, zapisywanie postępu, odświeżanie połączenia z bazą, paginacja, itp.).
+

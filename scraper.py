@@ -13,13 +13,20 @@ import cloudscraper
 import re
 import pymysql
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from user_rules import (
+    get_delay_between_pages, get_delay_between_requests,
+    get_db_config, get_log_config, get_urls, get_proxy_list,
+    get_parsing_config, get_max_workers, get_max_retries,
+    get_request_timeout, get_progress_file
+)
 
 # Konfiguracja logowania
+log_config = get_log_config()
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
+    level=getattr(logging, log_config['LEVEL']),
+    format=log_config['FORMAT'],
     handlers=[
-        logging.FileHandler('scraper.log', encoding='utf-8'),
+        logging.FileHandler(log_config['FILE'], encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -28,22 +35,19 @@ logging.basicConfig(
 load_dotenv()
 
 # Konfiguracja
-BASE_URL = "https://www.otodom.pl"
-LISTINGS_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
+urls = get_urls()
+BASE_URL = urls['BASE_URL']
+LISTINGS_URL = urls['LISTINGS_URL']
 
 # Konfiguracja bazy danych
 DB_SERVERNAME = os.getenv('DB_SERVERNAME')
 DB_USERNAME = os.getenv('DB_USERNAME')
 DB_PASSWORD = os.getenv('DB_PASSWORD')
 DB_NAME = os.getenv('DB_NAME')
-DB_PORT = int(os.getenv('DB_PORT', 3306))
+DB_PORT = int(os.getenv('DB_PORT', get_db_config()['PORT']))
 
-# Lista proxy - możesz dodać więcej
-PROXY_LIST = [
-    None,  # Bez proxy
-    'http://proxy1.example.com:8080',  # Przykładowe proxy - zamień na działające
-    'http://proxy2.example.com:8080',
-]
+# Lista proxy
+PROXY_LIST = get_proxy_list()
 
 # Inicjalizacja generatora User-Agent
 ua = UserAgent()
@@ -116,28 +120,31 @@ def create_scraper_session() -> cloudscraper.CloudScraper:
         debug=True
     )
 
-def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Optional[requests.Response]:
+def make_request(url: str, max_retries: int = None, retry_delay: int = None) -> Optional[requests.Response]:
     """Wykonuje request z obsługą błędów i ponownych prób"""
+    if max_retries is None:
+        max_retries = get_max_retries()
+    if retry_delay is None:
+        retry_delay = get_delay_between_requests()
+    
     scraper = create_scraper_session()
     
     for attempt in range(max_retries):
         try:
             # Dodaj losowe opóźnienie przed requestem
-            time.sleep(random.uniform(2, 5))
+            time.sleep(get_delay_between_requests())
             
             headers = get_headers()
             response = scraper.get(
                 url,
                 headers=headers,
-                timeout=30,
+                timeout=get_request_timeout(),
                 allow_redirects=True
             )
             
             if response.status_code == 403:
                 logging.warning(f"Dostęp zabroniony (403) - próba {attempt + 1}/{max_retries}")
-                # Zwiększ opóźnienie przy kolejnych próbach
                 time.sleep(retry_delay * (attempt + 2))
-                # Stwórz nową sesję
                 scraper = create_scraper_session()
                 continue
             
@@ -148,7 +155,6 @@ def make_request(url: str, max_retries: int = 3, retry_delay: int = 5) -> Option
             logging.error(f"Błąd podczas wykonywania requestu (próba {attempt + 1}/{max_retries}): {str(e)}")
             if attempt < max_retries - 1:
                 time.sleep(retry_delay * (attempt + 2))
-                # Stwórz nową sesję przy błędzie
                 scraper = create_scraper_session()
             else:
                 logging.error(f"Nie udało się pobrać strony po {max_retries} próbach")
@@ -542,7 +548,30 @@ def get_listing_links(page_url: str) -> List[str]:
         logging.error(f"Błąd podczas pobierania linków ze strony {page_url}: {str(e)}")
         return []
 
+def refresh_db_connection():
+    global db_conn
+    try:
+        if db_conn is not None:
+            db_conn.ping(reconnect=True)
+    except Exception as e:
+        logging.warning(f"Połączenie z bazą zostało utracone, próba ponownego połączenia: {str(e)}")
+        try:
+            db_conn = pymysql.connect(
+                host=DB_SERVERNAME,
+                user=DB_USERNAME,
+                password=DB_PASSWORD,
+                database=DB_NAME,
+                port=DB_PORT,
+                charset='utf8mb4',
+                cursorclass=pymysql.cursors.DictCursor
+            )
+            logging.info("Połączenie z bazą zostało odświeżone.")
+        except Exception as e2:
+            logging.error(f"Nie udało się ponownie połączyć z bazą: {str(e2)}")
+            db_conn = None
+
 def create_table_if_not_exists():
+    refresh_db_connection()
     if db_conn is None:
         logging.error('Brak połączenia z bazą danych!')
         return
@@ -630,33 +659,50 @@ def process_listing(link):
         else:
             logging.error(f"Błąd zapisu {listing_data['ad_id']} do bazy danych")
 
+def save_progress(page_number: int):
+    with open(get_progress_file(), "w") as f:
+        f.write(str(page_number))
+
+def load_progress() -> int:
+    try:
+        with open(get_progress_file(), "r") as f:
+            return int(f.read().strip())
+    except Exception:
+        return 1
+
 def scrape_listings():
     try:
-        page_number = 1
+        page_number = load_progress()
         total_listings = 0
-        max_pages = 100  # Limit stron do przeanalizowania
-        max_workers = 4
-        
-        while page_number <= max_pages:
+        max_workers = get_max_workers()
+
+        while True:
             current_page_url = get_next_page_url(LISTINGS_URL, page_number)
             logging.info(f"Strona {page_number}: {current_page_url}")
             listing_links = get_listing_links(current_page_url)
             if not listing_links:
                 logging.info(f"Brak ogłoszeń na stronie {page_number}. Kończę...")
                 break
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                futures = [executor.submit(process_listing, link) for link in listing_links]
-                for future in as_completed(futures):
-                    pass  # Możesz dodać obsługę wyjątków jeśli chcesz
-            total_listings += len(listing_links)
-            logging.info(f"Zakończono stronę {page_number}. Łącznie zapisano {total_listings} ogłoszeń.")
-            page_number += 1
-            time.sleep(random.uniform(0.1, 0.3))
+            try:
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    futures = [executor.submit(process_listing, link) for link in listing_links]
+                    for future in as_completed(futures):
+                        pass
+                total_listings += len(listing_links)
+                save_progress(page_number)
+                logging.info(f"Zakończono stronę {page_number}. Łącznie zapisano {total_listings} ogłoszeń.")
+                page_number += 1
+                time.sleep(get_delay_between_pages())
+            except Exception as e:
+                logging.error(f"Błąd podczas scrapowania strony {page_number}: {str(e)}")
+                save_progress(page_number)
+                raise
     except Exception as e:
         logging.error(f"Błąd podczas scrapowania: {str(e)}")
         raise
 
 def test_db_connection():
+    refresh_db_connection()
     if db_conn is None:
         logging.error('Brak połączenia z bazą danych!')
         return False
