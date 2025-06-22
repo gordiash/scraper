@@ -470,6 +470,44 @@ jobs:
               exit(1)
           "
           
+          echo "🔍 Final import test przed uruchomieniem scrapera:"
+          python -c "
+          import sys
+          import os
+          
+          # Dodaj główny katalog do path (tak jak w scraper_main.py)
+          main_dir = os.path.dirname(os.getcwd())
+          sys.path.insert(0, main_dir)
+          
+          print(f'Current directory: {os.getcwd()}')
+          print(f'Main directory: {main_dir}')
+          print(f'Python sys.path[0]: {sys.path[0]}')
+          
+          # Test podstawowych modułów
+          try:
+              import requests
+              print('✅ requests: OK')
+          except Exception as e:
+              print(f'❌ requests: {e}')
+              exit(1)
+              
+          # Test modułów projektowych dokładnie tak jak w scraper_main.py
+          try:
+              from src.scrapers.otodom_scraper import get_otodom_listings, DEFAULT_BASE_URL
+              print('✅ otodom_scraper: READY')
+          except Exception as e:
+              print(f'❌ otodom_scraper: FAILED - {e}')
+              print('📁 Contents of main directory:')
+              print(os.listdir(main_dir))
+              if 'src' in os.listdir(main_dir):
+                  print('📁 Contents of src directory:')
+                  print(os.listdir(os.path.join(main_dir, 'src')))
+                  if 'scrapers' in os.listdir(os.path.join(main_dir, 'src')):
+                      print('📁 Contents of src/scrapers directory:')
+                      print(os.listdir(os.path.join(main_dir, 'src', 'scrapers')))
+              exit(1)
+          "
+          
           # Przygotuj parametry na podstawie inputów
           PARAMS=""
           
@@ -493,9 +531,23 @@ jobs:
           echo "   MYSQL_HOST: ${MYSQL_HOST:-'not_set'}"
           echo "   MYSQL_DATABASE: ${MYSQL_DATABASE:-'not_set'}"
           
-          # Test importów przed uruchomieniem
+          # Ustaw PYTHONPATH aby zawierał główny katalog projektu
+          export PYTHONPATH="$(dirname $(pwd)):$PYTHONPATH"
+          echo "🔧 PYTHONPATH: $PYTHONPATH"
+          
+          # Test importów przed uruchomieniem - dokładnie tak jak w scraper_main.py
           echo "🔍 Final import test przed uruchomieniem scrapera:"
           python -c "
+          import sys
+          import os
+          
+          # Dodaj główny katalog do path (dokładnie tak jak w scraper_main.py)
+          main_dir = os.path.dirname(os.getcwd())
+          sys.path.append(main_dir)
+          
+          print(f'🔧 Dodano do sys.path: {main_dir}')
+          print(f'🔧 sys.path[0]: {sys.path[0]}')
+          
           try:
               import requests
               print('✅ requests: OK')
@@ -504,13 +556,14 @@ jobs:
               exit(1)
               
           try:
-              from src.scrapers.otodom_scraper import get_otodom_listings
-              print('✅ otodom_scraper: OK')
+              from src.scrapers.otodom_scraper import get_otodom_listings, DEFAULT_BASE_URL
+              print('✅ otodom_scraper: READY')
           except ImportError as e:
               print(f'❌ otodom_scraper: FAILED - {e}')
+              print(f'📁 Directory contents: {os.listdir(main_dir)}')
               exit(1)
               
-          print('✅ Wszystkie importy działają poprawnie')
+          print('✅ Wszystkie importy gotowe do uruchomienia scrapera')
           "
           
           python scraper_main.py $PARAMS
