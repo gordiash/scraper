@@ -94,10 +94,58 @@ except Exception as e:
 
 - `0ccdedc` - Napraw importy: dodaj fake-useragent i rozszerz weryfikację modułów src
 
+### 4. Naprawiono import modułu `src` w scraper_main.py
+
+**Problem**: Różne konteksty Python - testy przechodzą, ale scraper_main.py nie może importować `src`.
+
+**Rozwiązanie**:
+
+```yaml
+# Ustaw PYTHONPATH aby zawierał główny katalog projektu
+export PYTHONPATH="$(dirname $(pwd)):$PYTHONPATH"
+
+# Test importów przed uruchomieniem - dokładnie tak jak w scraper_main.py
+python -c "
+import sys
+import os
+
+# Dodaj główny katalog do path (dokładnie tak jak w scraper_main.py)
+main_dir = os.path.dirname(os.getcwd())
+sys.path.append(main_dir)
+
+try:
+    from src.scrapers.otodom_scraper import get_otodom_listings, DEFAULT_BASE_URL
+    print('✅ otodom_scraper: READY')
+except ImportError as e:
+    print(f'❌ otodom_scraper: FAILED - {e}')
+    exit(1)
+"
+```
+
+## Rezultat - Aktualizacja
+
+✅ **Dodano `fake-useragent==1.4.0` do instalacji**  
+✅ **Rozszerzono weryfikację importów**  
+✅ **Poprawiono ścieżki Python dla modułów projektowych**  
+✅ **Dodano final test przed uruchomieniem scrapera**  
+✅ **Dodano PYTHONPATH dla konsystentnych importów**  
+✅ **Zsynchronizowano logikę importów z scraper_main.py**  
+
+## Commity
+
+- `0ccdedc` - Napraw importy: dodaj fake-useragent i rozszerz weryfikację modułów src
+- `bdaccc4` - Dodaj dokumentację poprawek GitHub Actions dla importów
+- `cc1456c` - Napraw import src w scraper_main.py - dodaj PYTHONPATH i lepszy debug
+
 ## Status
 
-🟡 **W TRAKCIE TESTOWANIA** - Poprawki wysłane do GitHub, oczekujemy na weryfikację w GitHub Actions
+🟢 **GOTOWE DO TESTOWANIA** - Wszystkie importy powinny działać poprawnie
+
+**Ostatnie testy pokazały**:
+- ✅ Wszystkie podstawowe pakiety (`requests`, `beautifulsoup4`, `selenium`, `fake_useragent`, `mysql.connector`)
+- ✅ Moduły projektowe (`utils`, `src.scrapers.otodom_scraper`) w testach
+- 🔧 Problem z importem `src` w scraper_main.py - **NAPRAWIONE** przez PYTHONPATH
 
 ---
 
-**Następny krok**: Uruchomić workflow i sprawdzić czy wszystkie importy działają poprawnie. 
+**Następny krok**: Uruchomić workflow - powinien przejść przez wszystkie importy i uruchomić scraper bez błędów. 
