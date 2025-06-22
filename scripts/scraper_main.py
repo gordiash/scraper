@@ -16,7 +16,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.scrapers.otodom_scraper import get_otodom_listings, DEFAULT_BASE_URL
 from src.parsers.address_parser import process_all_locations
-from src.geocoding.geocoder import update_all_coordinates_improved
+from src.geocoding.geocoder import main_geocoding_process
 from mysql_utils import save_listings_to_mysql, get_mysql_connection
 from src.deduplication.deduplicator import deduplicate_listings, generate_duplicate_report
 
@@ -283,7 +283,7 @@ def run_geocoding_phase(max_addresses: int) -> bool:
         print(f"   • Max retries: 2")
         
         # Uruchom geocoding (funkcja wyświetla własne statystyki)
-        update_all_coordinates_improved(max_addresses=max_addresses)
+        main_geocoding_process(max_addresses=max_addresses)
         print("✅ Geocoding zakończony")
         return True
         

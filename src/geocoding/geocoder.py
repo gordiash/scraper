@@ -497,67 +497,110 @@ def update_all_coordinates_improved(batch_size: int = BATCH_SIZE, max_addresses:
     
     print("="*80)
 
+def main_geocoding_process(max_addresses: int = 100, batch_size: int = 50) -> bool:
+    """
+    Główny proces geocodingu - prosty i niezawodny
+    
+    Args:
+        max_addresses: Maksymalna liczba adresów do przetworzenia
+        batch_size: Rozmiar batcha
+    
+    Returns:
+        bool: True jeśli proces zakończył się sukcesem
+    """
+    print(f"\n🌍 URUCHAMIANIE GEOCODINGU")
+    print(f"📊 Parametry: max_addresses={max_addresses}, batch_size={batch_size}")
+    
+    try:
+        # Sprawdź połączenie z bazą
+        connection = get_mysql_connection()
+        connection.close()
+        print("✅ Połączenie z bazą MySQL: OK")
+    except Exception as e:
+        print(f"❌ Błąd połączenia z bazą: {e}")
+        return False
+    
+    total_processed = 0
+    total_success = 0
+    
+    while total_processed < max_addresses:
+        # Oblicz rozmiar batcha
+        current_batch_size = min(batch_size, max_addresses - total_processed)
+        
+        print(f"\n🔄 Przetwarzanie batcha {current_batch_size} adresów...")
+        
+        # Pobierz adresy bez współrzędnych
+        addresses = get_addresses_without_coordinates(current_batch_size)
+        
+        if not addresses:
+            print("✅ Wszystkie adresy mają już współrzędne!")
+            break
+        
+        # Przetwórz batch
+        batch_stats = process_geocoding_batch_improved(addresses)
+        
+        total_processed += len(addresses)
+        total_success += batch_stats.get('geocoded', 0)
+        
+        print(f"   📊 Batch: {batch_stats.get('geocoded', 0)}/{len(addresses)} geocoded")
+        
+        # Jeśli batch był mniejszy niż oczekiwany, to był ostatni
+        if len(addresses) < current_batch_size:
+            break
+    
+    # Podsumowanie
+    success_rate = (total_success / total_processed * 100) if total_processed > 0 else 0
+    print(f"\n📊 PODSUMOWANIE GEOCODINGU:")
+    print(f"   • Przetworzonych: {total_processed}")
+    print(f"   • Geocoded: {total_success}")
+    print(f"   • Skuteczność: {success_rate:.1f}%")
+    
+    return True
+
 if __name__ == "__main__":
     """Test geocodera"""
     import argparse
     
-    parser = argparse.ArgumentParser(description='Geocoder dla tabeli addresses')
-    parser.add_argument('--test', action='store_true', help='Uruchom test geocodingu')
-    parser.add_argument('--update', action='store_true', help='Aktualizuj współrzędne w bazie')
-    parser.add_argument('--batch-size', type=int, default=50, help='Rozmiar batcha (domyślnie: 50)')
-    parser.add_argument('--max-addresses', type=int, help='Maksymalna liczba adresów do przetworzenia')
+    parser = argparse.ArgumentParser(description='Geocoder nieruchomości')
+    parser.add_argument('--test', action='store_true', help='Uruchom test')
+    parser.add_argument('--run', action='store_true', help='Uruchom geocoding')
+    parser.add_argument('--max-addresses', type=int, default=50, help='Maksymalna liczba adresów')
+    parser.add_argument('--batch-size', type=int, default=20, help='Rozmiar batcha')
     
     args = parser.parse_args()
     
-    try:
-        if args.test:
-            # Test geocodingu
-            test_addresses = [
-                {
-                    'id': 'test1',
-                    'city': 'Warszawa',
-                    'district': 'Mokotów',
-                    'street_name': 'ul. Puławska'
-                },
-                {
-                    'id': 'test2',
-                    'city': 'Kraków',
-                    'district': 'Stare Miasto'
-                }
-            ]
-            
-            print("🧪 TEST GEOCODINGU")
-            print("="*60)
-            
-            for i, address in enumerate(test_addresses, 1):
-                print(f"\n{i}. Test adresu:")
-                query = build_simple_search_query(address)
-                print(f"   📍 Zapytanie: {query}")
-                
-                coordinates = geocode_address_improved(query, build_fallback_query(address))
-                if coordinates:
-                    lat, lon = coordinates
-                    print(f"   ✅ Współrzędne: {lat:.6f}, {lon:.6f}")
-                else:
-                    print(f"   ❌ Nie znaleziono współrzędnych")
-                
-                if i < len(test_addresses):
-                    time.sleep(DELAY_BETWEEN_REQUESTS)
-                    
-        elif args.update:
-            update_all_coordinates_improved(
-                batch_size=args.batch_size,
-                max_addresses=args.max_addresses
-            )
-        else:
-            print("🌍 GEOCODER")
-            print("Użycie:")
-            print("  python geocoder.py --test           # Test geocodingu")
-            print("  python geocoder.py --update         # Aktualizuj wszystkie")
-            print("  python geocoder.py --update --max-addresses 100  # Limit")
-            
-    except KeyboardInterrupt:
-        print("\n⚠️ Przerwano przez użytkownika")
-    except Exception as e:
-        print(f"\n❌ Błąd krytyczny: {e}")
-        logger.error(f"Błąd w geocoder: {e}", exc_info=True) 
+    if args.test:
+        print("🧪 TEST GEOCODERA")
+        print("="*50)
+        
+        # Test połączenia z bazą
+        try:
+            connection = get_mysql_connection()
+            cursor = connection.cursor()
+            cursor.execute("SELECT COUNT(*) FROM nieruchomosci WHERE latitude IS NULL AND longitude IS NULL")
+            count = cursor.fetchone()[0]
+            print(f"📊 Nieruchomości bez współrzędnych: {count}")
+            cursor.close()
+            connection.close()
+        except Exception as e:
+            print(f"❌ Błąd połączenia z bazą: {e}")
+            exit(1)
+        
+        # Test z małą próbką
+        success = main_geocoding_process(max_addresses=5, batch_size=5)
+        print(f"🎯 Test result: {'✅ SUKCES' if success else '❌ BŁĄD'}")
+        
+    elif args.run:
+        print("🚀 URUCHAMIANIE GEOCODERA")
+        success = main_geocoding_process(
+            max_addresses=args.max_addresses,
+            batch_size=args.batch_size
+        )
+        print(f"🎯 Wynik: {'✅ SUKCES' if success else '❌ BŁĄD'}")
+        
+    else:
+        print("🌍 GEOCODER NIERUCHOMOŚCI")
+        print("Użycie:")
+        print("  python geocoder.py --test                    # Test na 5 adresach") 
+        print("  python geocoder.py --run                     # Geocoding 50 adresów")
+        print("  python geocoder.py --run --max-addresses 100 # Geocoding 100 adresów") 

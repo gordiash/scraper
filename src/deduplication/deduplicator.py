@@ -10,9 +10,11 @@ from functools import lru_cache
 # Import na początku modułu dla wydajności
 try:
     from fuzzywuzzy import fuzz
+    FUZZYWUZZY_AVAILABLE = True
 except ImportError:
-    print("⚠️ Brak biblioteki fuzzywuzzy. Instaluj: pip install fuzzywuzzy python-levenshtein")
+    print("⚠️ Brak biblioteki fuzzywuzzy. Używam alternatywnych metod porównania tekstów.")
     fuzz = None
+    FUZZYWUZZY_AVAILABLE = False
 
 # =================================================================
 # FUNKCJE WYKRYWANIA DUPLIKATÓW OGŁOSZEŃ
@@ -133,9 +135,11 @@ def calculate_listings_similarity(listing1: Dict, listing2: Dict) -> float:
     Returns:
         float: Procent podobieństwa (0-100).
     """
-    # Sprawdź czy fuzzywuzzy jest dostępne
-    if fuzz is None:
-        raise ImportError("Biblioteka fuzzywuzzy nie jest zainstalowana. Instaluj: pip install fuzzywuzzy python-levenshtein")
+    # Wybierz funkcję porównania tekstów
+    if FUZZYWUZZY_AVAILABLE:
+        ratio_func = fuzz.ratio
+    else:
+        ratio_func = levenshtein_ratio  # Użyj alternatywnej funkcji
     
     # Waliduj dane wejściowe
     listing1 = validate_listing_data(listing1)
@@ -148,7 +152,7 @@ def calculate_listings_similarity(listing1: Dict, listing2: Dict) -> float:
     title1 = normalize_text(listing1.get('title_raw', ''))
     title2 = normalize_text(listing2.get('title_raw', ''))
     if title1 and title2:
-        title_sim = fuzz.ratio(title1, title2)
+        title_sim = ratio_func(title1, title2)
         similarity_score += title_sim * 0.40
         total_weight += 0.40
 
@@ -197,9 +201,9 @@ def calculate_listings_similarity(listing1: Dict, listing2: Dict) -> float:
     city2 = normalize_text(listing2.get('city', ''))
     district2 = normalize_text(listing2.get('district', ''))
     
-    if city1 and city2 and fuzz.ratio(city1, city2) > 80:
+    if city1 and city2 and ratio_func(city1, city2) > 80:
         similarity_score += 50 * 0.10 # 50% wagi za miasto
-        if district1 and district2 and fuzz.ratio(district1, district2) > 70:
+        if district1 and district2 and ratio_func(district1, district2) > 70:
             similarity_score += 50 * 0.10 # Dodatkowe 50% za dzielnicę
         total_weight += 0.10
 
@@ -212,9 +216,11 @@ def simple_similarity(listing1: Dict, listing2: Dict) -> float:
     """
     Prosta funkcja podobieństwa - dla szybkich testów
     """
-    # Sprawdź czy fuzzywuzzy jest dostępne
-    if fuzz is None:
-        return 0.0
+    # Wybierz funkcję porównania tekstów
+    if FUZZYWUZZY_AVAILABLE:
+        ratio_func = fuzz.ratio
+    else:
+        ratio_func = simple_ratio  # Użyj prostej alternatywy
         
     # Porównaj URL, jeśli są identyczne
     if listing1.get('url') and listing2.get('url') and listing1['url'] == listing2['url']:
@@ -223,7 +229,7 @@ def simple_similarity(listing1: Dict, listing2: Dict) -> float:
     # Porównaj tytuły i ceny
     title_sim = 0
     if listing1.get('title_raw') and listing2.get('title_raw'):
-        title_sim = fuzz.ratio(normalize_text(listing1['title_raw']), normalize_text(listing2['title_raw']))
+        title_sim = ratio_func(normalize_text(listing1['title_raw']), normalize_text(listing2['title_raw']))
         
     price_match = False
     try:
@@ -397,3 +403,88 @@ def validate_listing_data(listing: Dict) -> Dict:
     validated['source'] = str(source) if source is not None else ""
     
     return validated 
+
+# =================================================================
+# ALTERNATYWNE FUNKCJE PORÓWNANIA TEKSTÓW (bez fuzzywuzzy)
+# =================================================================
+
+def simple_ratio(text1: str, text2: str) -> float:
+    """
+    Prosta alternatywa dla fuzz.ratio() - porównanie zestawów słów
+    
+    Args:
+        text1: Pierwszy tekst
+        text2: Drugi tekst
+    
+    Returns:
+        float: Podobieństwo w zakresie 0-100
+    """
+    if not text1 or not text2:
+        return 0.0
+    
+    # Rozdziel na słowa i usuń duplikaty
+    words1 = set(text1.lower().split())
+    words2 = set(text2.lower().split())
+    
+    if not words1 or not words2:
+        return 0.0
+    
+    # Oblicz Jaccard similarity
+    intersection = len(words1.intersection(words2))
+    union = len(words1.union(words2))
+    
+    if union == 0:
+        return 0.0
+    
+    return (intersection / union) * 100
+
+def levenshtein_distance(s1: str, s2: str) -> int:
+    """
+    Oblicza odległość Levenshteina między dwoma stringami
+    
+    Args:
+        s1: Pierwszy string
+        s2: Drugi string
+    
+    Returns:
+        int: Odległość Levenshteina
+    """
+    if len(s1) < len(s2):
+        return levenshtein_distance(s2, s1)
+
+    if len(s2) == 0:
+        return len(s1)
+
+    previous_row = list(range(len(s2) + 1))
+    for i, c1 in enumerate(s1):
+        current_row = [i + 1]
+        for j, c2 in enumerate(s2):
+            insertions = previous_row[j + 1] + 1
+            deletions = current_row[j] + 1
+            substitutions = previous_row[j] + (c1 != c2)
+            current_row.append(min(insertions, deletions, substitutions))
+        previous_row = current_row
+    
+    return previous_row[-1]
+
+def levenshtein_ratio(text1: str, text2: str) -> float:
+    """
+    Oblicza podobieństwo na podstawie odległości Levenshteina
+    
+    Args:
+        text1: Pierwszy tekst
+        text2: Drugi tekst
+    
+    Returns:
+        float: Podobieństwo w zakresie 0-100
+    """
+    if not text1 or not text2:
+        return 0.0
+    
+    distance = levenshtein_distance(text1, text2)
+    max_len = max(len(text1), len(text2))
+    
+    if max_len == 0:
+        return 100.0
+    
+    return ((max_len - distance) / max_len) * 100 

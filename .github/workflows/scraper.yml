@@ -146,6 +146,12 @@ jobs:
           pip install pandas==2.1.4
           pip install fake-useragent==1.4.0
           
+          # Dodaj brakujące biblioteki do przetwarzania tekstu
+          echo "🔧 Instalowanie bibliotek do przetwarzania tekstu..."
+          pip install fuzzywuzzy==0.18.0
+          pip install python-Levenshtein==0.23.0
+          pip install unidecode==1.3.7
+          
           # MySQL connectory
           echo "🔧 Instalowanie mysql-connector-python..."
           pip install mysql-connector-python==8.2.0
@@ -167,6 +173,9 @@ jobs:
               ('python-dotenv', 'dotenv'),
               ('pandas', 'pandas'),
               ('fake-useragent', 'fake_useragent'),
+              ('fuzzywuzzy', 'fuzzywuzzy'),
+              ('python-Levenshtein', 'Levenshtein'),
+              ('unidecode', 'unidecode'),
               ('mysql.connector', 'mysql.connector'),
               ('pymysql', 'pymysql')
           ]
@@ -219,6 +228,9 @@ jobs:
               import pandas
               import dotenv
               import fake_useragent
+              import fuzzywuzzy
+              import Levenshtein
+              import unidecode
               print('✅ Wszystkie podstawowe importy działają poprawnie!')
           except Exception as e:
               print(f'❌ Błąd finalnego testu: {e}')

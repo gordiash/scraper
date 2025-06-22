@@ -16,7 +16,7 @@ import json
 # Dodaj główny katalog do ścieżki
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-from supabase_utils import get_supabase_client
+from mysql_utils import get_mysql_connection
 
 # Konfiguracja logowania
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -72,9 +72,10 @@ class OptimizedGeocoder:
         """Buduje zoptymalizowane zapytanie - tylko najważniejsze elementy"""
         components = []
         
-        # 1. Ulica (bez prefiksów)
-        if address_data.get('street_name'):
-            street = address_data['street_name']
+        # 1. Ulica (bez prefiksów) - używaj 'street' zamiast 'street_name'
+        street_value = address_data.get('street') or address_data.get('street_name', '')
+        if street_value:
+            street = str(street_value)
             # Usuń prefiksy
             for prefix in ['Ul. ', 'Al. ', 'Pl. ', 'Os. ', 'ul. ', 'al. ', 'pl. ', 'os. ']:
                 street = street.replace(prefix, '')
@@ -83,7 +84,7 @@ class OptimizedGeocoder:
         
         # 2. Miasto (obowiązkowe)
         if address_data.get('city'):
-            city = address_data['city']
+            city = str(address_data['city'])
             # Poprawki nazw miast
             city_fixes = {
                 'Gdański': 'Pruszcz Gdański',
@@ -93,7 +94,13 @@ class OptimizedGeocoder:
             city = city_fixes.get(city, city)
             components.append(city)
         
-        # 3. Zawsze dodaj "Polska"
+        # 3. Jeśli nie ma miasta, użyj address_raw
+        elif address_data.get('address_raw'):
+            # Wyciągnij miasto z address_raw jeśli możliwe
+            address_raw = str(address_data['address_raw'])
+            components.append(address_raw)
+        
+        # 4. Zawsze dodaj "Polska"
         components.append("Polska")
         
         query = ", ".join(components)
@@ -231,73 +238,83 @@ class OptimizedGeocoder:
         return (address_id, coordinates)
 
 def get_addresses_without_coordinates_optimized(limit: int = 100) -> List[Dict]:
-    """Zoptymalizowane pobieranie adresów bez współrzędnych"""
-    supabase = get_supabase_client()
-    
+    """Zoptymalizowane pobieranie adresów bez współrzędnych z MySQL"""
     try:
-        # Pobierz tylko potrzebne kolumny dla wydajności
-        result = supabase.table("addresses").select(
-            "id, city, street_name, district, latitude, longitude"
-        ).is_('latitude', 'null').is_('longitude', 'null').limit(limit).execute()
+        connection = get_mysql_connection()
+        cursor = connection.cursor(dictionary=True)
         
-        if result.data:
-            logger.info(f"📊 Pobrano {len(result.data)} adresów bez współrzędnych")
-            return result.data
+        # Pobierz nieruchomości bez współrzędnych
+        query = """
+        SELECT ad_id as id, city, street, district, address_raw, latitude, longitude
+        FROM nieruchomosci 
+        WHERE latitude IS NULL AND longitude IS NULL 
+        AND address_raw IS NOT NULL
+        LIMIT %s
+        """
+        
+        cursor.execute(query, (limit,))
+        results = cursor.fetchall()
+        
+        cursor.close()
+        connection.close()
+        
+        if results:
+            logger.info(f"📊 Pobrano {len(results)} adresów bez współrzędnych")
+            return results
         else:
             logger.info("✅ Wszystkie adresy mają już współrzędne")
             return []
             
     except Exception as e:
-        logger.error(f"❌ Błąd pobierania adresów: {e}")
+        logger.error(f"❌ Błąd pobierania adresów z MySQL: {e}")
         return []
 
 def update_coordinates_batch(coordinates_data: List[Tuple[int, Optional[Tuple[float, float]]]]) -> Dict[str, int]:
-    """Batch update współrzędnych w bazie danych"""
-    supabase = get_supabase_client()
+    """Batch update współrzędnych w bazie danych MySQL"""
     stats = {"success": 0, "failed": 0, "skipped": 0}
     
-    # Przygotuj dane do batch update
-    updates = []
+    # Filtruj dane z współrzędnymi
+    valid_updates = []
     for address_id, coordinates in coordinates_data:
-        if coordinates:
+        if coordinates and len(coordinates) == 2:
             lat, lon = coordinates
-            updates.append({
-                "id": address_id,
-                "latitude": lat,
-                "longitude": lon
-            })
+            if lat is not None and lon is not None:
+                valid_updates.append((address_id, lat, lon))
     
-    if not updates:
+    if not valid_updates:
         stats["skipped"] = len(coordinates_data)
         return stats
     
     try:
-        # Batch update - znacznie szybsze niż pojedyncze update
-        for update_data in updates:
-            try:
-                result = supabase.table("addresses").update({
-                    "latitude": update_data["latitude"],
-                    "longitude": update_data["longitude"]
-                }).eq("id", update_data["id"]).execute()
-                
-                if result.data:
-                    stats["success"] += 1
-                else:
-                    stats["failed"] += 1
-                    
-            except Exception as e:
-                logger.error(f"Błąd update adresu {update_data['id']}: {e}")
-                stats["failed"] += 1
+        connection = get_mysql_connection()
+        cursor = connection.cursor()
         
-        # Policz pominięte
-        stats["skipped"] = len(coordinates_data) - len(updates)
+        # Batch update - użyj executemany dla wydajności
+        query = """
+        UPDATE nieruchomosci 
+        SET latitude = %s, longitude = %s, updated_at = CURRENT_TIMESTAMP
+        WHERE ad_id = %s
+        """
+        
+        # Przygotuj dane w odpowiednim formacie (lat, lon, id)
+        update_data = [(lat, lon, address_id) for address_id, lat, lon in valid_updates]
+        
+        cursor.executemany(query, update_data)
+        connection.commit()
+        
+        stats["success"] = cursor.rowcount
+        stats["failed"] = len(valid_updates) - cursor.rowcount
+        stats["skipped"] = len(coordinates_data) - len(valid_updates)
+        
+        cursor.close()
+        connection.close()
         
         logger.info(f"✅ Batch update: {stats['success']} sukces, {stats['failed']} błędów, {stats['skipped']} pominiętych")
         
     except Exception as e:
-        logger.error(f"❌ Błąd batch update: {e}")
-        stats["failed"] = len(updates)
-        stats["skipped"] = len(coordinates_data) - len(updates)
+        logger.error(f"❌ Błąd batch update MySQL: {e}")
+        stats["failed"] = len(valid_updates)
+        stats["skipped"] = len(coordinates_data) - len(valid_updates)
     
     return stats
 

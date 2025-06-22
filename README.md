@@ -139,4 +139,48 @@ scraper/
 └── README.md              # Ten plik
 ```
 
+## 🔧 Najnowsze poprawki geocodingu
+
+### Problem z fuzzywuzzy
+
+**Błąd:** Scraper wyrzucał błąd `ImportError: Biblioteka fuzzywuzzy nie jest zainstalowana` i przerywał działanie.
+
+**Rozwiązanie:**
+1. ✅ **Poprawiono deduplicator** (`src/deduplication/deduplicator.py`):
+   - Dodano alternatywne funkcje porównania tekstów gdy `fuzzywuzzy` nie jest dostępne
+   - Zaimplementowano `simple_ratio()` i `levenshtein_ratio()` jako zamienniki
+   - Deduplicator teraz działa niezależnie od dostępności biblioteki
+
+2. ✅ **Poprawiono instalację w GitHub Actions**:
+   - Dodano jawną instalację `fuzzywuzzy==0.18.0` i `python-Levenshtein==0.23.0`
+   - Dodano testy importów dla bibliotek tekstowych
+
+### Problem z optimized geocoder
+
+**Błąd:** Optimized geocoder używał nieistniejącego `supabase_utils.py`.
+
+**Rozwiązanie:**
+1. ✅ **Przepisano optimized geocoder** na MySQL:
+   - Zmieniono importy z `supabase_utils` na `mysql_utils`
+   - Przepisano funkcje bazy danych na SQL zamiast Supabase API
+   - Poprawiono nazwy kolumn (`street` zamiast `street_name`)
+
+2. ✅ **Stworzono niezawodny geocoder**:
+   - Dodano funkcję `main_geocoding_process()` w `src/geocoding/geocoder.py`
+   - Prosty, stabilny proces geocodingu bez async/await
+   - Lepsze raportowanie błędów i statystyk
+
+### Aktualne działanie geocodingu
+
+**Scraper główny:** Używa `main_geocoding_process()` - prosty i niezawodny
+**Test geocodera:** `python src/geocoding/geocoder.py --test`
+**Ręczny geocoding:** `python src/geocoding/geocoder.py --run --max-addresses 100`
+
+### Biblioteki wymagane dla geocodingu
+- `requests` - zapytania HTTP do Nominatim OSM
+- `mysql-connector-python` - połączenie z bazą MySQL  
+- `fuzzywuzzy` + `python-Levenshtein` - porównanie tekstów (opcjonalne)
+
+Wszystkie biblioteki są automatycznie instalowane w GitHub Actions.
+
 ---
