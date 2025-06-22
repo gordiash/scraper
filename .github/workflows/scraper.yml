@@ -11,7 +11,7 @@ on:
       max_pages:
         description: 'Maksymalna liczba stron do scrapowania (0 = wszystkie)'
         required: false
-        default: '5'
+        default: '0'
         type: string
       batch_size:
         description: 'Rozmiar batcha do zapisu'
@@ -33,7 +33,7 @@ jobs:
   scraper:
     name: 🔍 Uruchom Scraper
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 640
     
     # Environment variables dostępne dla wszystkich kroków
     env:
