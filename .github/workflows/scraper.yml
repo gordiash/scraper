@@ -144,6 +144,7 @@ jobs:
           pip install lxml==4.9.3
           pip install python-dotenv==1.0.0
           pip install pandas==2.1.4
+          pip install fake-useragent==1.4.0
           
           # MySQL connectory
           echo "🔧 Instalowanie mysql-connector-python..."
@@ -165,6 +166,7 @@ jobs:
               ('lxml', 'lxml'),
               ('python-dotenv', 'dotenv'),
               ('pandas', 'pandas'),
+              ('fake-useragent', 'fake_useragent'),
               ('mysql.connector', 'mysql.connector'),
               ('pymysql', 'pymysql')
           ]
@@ -216,7 +218,8 @@ jobs:
               import pymysql
               import pandas
               import dotenv
-              print('✅ Wszystkie importy działają poprawnie!')
+              import fake_useragent
+              print('✅ Wszystkie podstawowe importy działają poprawnie!')
           except Exception as e:
               print(f'❌ Błąd finalnego testu: {e}')
               exit(1)
@@ -395,10 +398,14 @@ jobs:
           import os
           
           # Dodaj główny katalog do path
-          sys.path.insert(0, os.path.dirname(os.getcwd()))
+          main_dir = os.path.dirname(os.getcwd())
+          sys.path.insert(0, main_dir)
           
+          print(f'Current dir: {os.getcwd()}')
+          print(f'Main dir: {main_dir}')
           print(f'Python path: {sys.path[:3]}...')
           
+          # Test podstawowych importów
           try:
               import requests
               print('✅ requests: OK')
@@ -418,22 +425,49 @@ jobs:
               print(f'❌ selenium: {e}')
               
           try:
+              import fake_useragent
+              print('✅ fake_useragent: OK')
+          except Exception as e:
+              print(f'❌ fake_useragent: {e}')
+              
+          try:
               import mysql.connector
               print('✅ mysql.connector: OK')
           except Exception as e:
               print(f'❌ mysql.connector: {e}')
-              
+          
+          # Test projektowych importów
           try:
+              import utils
+              print('✅ utils module: OK')
               from utils import get_soup
               print('✅ utils.get_soup: OK')
           except Exception as e:
               print(f'❌ utils.get_soup: {e}')
               
           try:
+              import src
+              print('✅ src module: OK')
+          except Exception as e:
+              print(f'❌ src module: {e}')
+              
+          try:
+              from src.scrapers import otodom_scraper
+              print('✅ src.scrapers.otodom_scraper module: OK')
               from src.scrapers.otodom_scraper import get_otodom_listings
-              print('✅ otodom_scraper: OK')
+              print('✅ otodom_scraper.get_otodom_listings: OK')
           except Exception as e:
               print(f'❌ otodom_scraper: {e}')
+          
+          # Final test scrapera przed uruchomieniem
+          print('')
+          print('🔍 Final import test przed uruchomieniem scrapera:')
+          try:
+              from src.scrapers.otodom_scraper import get_otodom_listings, DEFAULT_BASE_URL
+              print('✅ otodom_scraper: READY')
+          except Exception as e:
+              print(f'❌ otodom_scraper: FAILED - {e}')
+              exit(1)
           "
           
           # Przygotuj parametry na podstawie inputów
