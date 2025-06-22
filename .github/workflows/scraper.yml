@@ -1,0 +1,751 @@
+name: 🏠 Scraper Nieruchomości
+
+on:
+  # Uruchamianie co 6 godzin
+  schedule:
+    - cron: '0 */6 * * *'
+  
+  # Możliwość ręcznego uruchomienia
+  workflow_dispatch:
+    inputs:
+      max_pages:
+        description: 'Maksymalna liczba stron do scrapowania (0 = wszystkie)'
+        required: false
+        default: '5'
+        type: string
+      batch_size:
+        description: 'Rozmiar batcha do zapisu'
+        required: false
+        default: '100'
+        type: string
+      scraping_only:
+        description: 'Tylko scrapowanie bez geocodingu'
+        required: false
+        default: false
+        type: boolean
+      no_details:
+        description: 'Pomiń szczegółowy scraping'
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  scraper:
+    name: 🔍 Uruchom Scraper
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    # Environment variables dostępne dla wszystkich kroków
+    env:
+      PYTHONUNBUFFERED: 1
+      PYTHONDONTWRITEBYTECODE: 1
+    
+    steps:
+      - name: 📥 Checkout kodu
+        uses: actions/checkout@v4
+        with:
+          clean: true
+          fetch-depth: 0
+        
+      - name: 🛠️ Sprawdź strukturę repozytorium
+        run: |
+          echo "📁 Sprawdzenie struktury repozytorium po checkout..."
+          echo "🏠 Katalog główny:"
+          ls -la
+          echo ""
+          echo "📂 Sprawdzenie katalogu scripts:"
+          if [ -d "scripts" ]; then
+            echo "✅ Katalog scripts/ istnieje"
+            ls -la scripts/
+          else
+            echo "❌ BRAK katalogu scripts/"
+            echo "🔍 Sprawdzamy commit SHA:"
+            git rev-parse HEAD
+            echo "🔍 Sprawdzamy wszystkie pliki w repo:"
+            git ls-tree -r HEAD | grep scripts || echo "❌ Brak plików scripts w tree"
+          fi
+        
+      - name: 🔐 Validate secrets
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          echo "🔍 Sprawdzanie sekretów..."
+          
+          missing_secrets=()
+          
+          if [ -z "$MYSQL_HOST" ]; then missing_secrets+=("MYSQL_HOST"); fi
+          if [ -z "$MYSQL_PORT" ]; then missing_secrets+=("MYSQL_PORT"); fi
+          if [ -z "$MYSQL_USER" ]; then missing_secrets+=("MYSQL_USER"); fi
+          if [ -z "$MYSQL_PASSWORD" ]; then missing_secrets+=("MYSQL_PASSWORD"); fi
+          if [ -z "$MYSQL_DATABASE" ]; then missing_secrets+=("MYSQL_DATABASE"); fi
+          
+          if [ ${#missing_secrets[@]} -ne 0 ]; then
+            echo "❌ Brakujące sekrety: ${missing_secrets[*]}"
+            echo "💡 Skonfiguruj je w Settings > Secrets and variables > Actions"
+            exit 1
+          else
+            echo "✅ Wszystkie wymagane sekrety są skonfigurowane"
+          fi
+          
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          
+      - name: 📦 Zainstaluj Chrome dla Selenium
+        uses: browser-actions/setup-chrome@latest
+        with:
+          chrome-version: stable
+          
+      - name: 📦 Zainstaluj ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+        
+      - name: 📝 Sprawdź wersje przeglądarek
+        run: |
+          google-chrome --version
+          chromedriver --version
+          
+      - name: 📦 Cache pip dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+            
+      - name: 🔧 Zainstaluj system dependencies dla MySQL
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y default-libmysqlclient-dev build-essential pkg-config
+          
+      - name: 📦 Zainstaluj zależności Python
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          
+          # Sprawdź requirements.txt
+          echo "📋 Zawartość requirements.txt:"
+          if [ -f requirements.txt ]; then
+            cat requirements.txt
+          else
+            echo "❌ Brak pliku requirements.txt!"
+            exit 1
+          fi
+          
+          # Zainstaluj WSZYSTKIE podstawowe zależności ręcznie w pierwszej kolejności
+          echo "🔧 Instalowanie kluczowych zależności..."
+          pip install requests==2.31.0
+          pip install beautifulsoup4==4.12.2
+          pip install selenium==4.16.0
+          pip install lxml==4.9.3
+          pip install python-dotenv==1.0.0
+          pip install pandas==2.1.4
+          
+          # MySQL connectory
+          echo "🔧 Instalowanie mysql-connector-python..."
+          pip install mysql-connector-python==8.2.0
+          
+          echo "🔧 Instalowanie PyMySQL jako backup..."
+          pip install PyMySQL==1.1.0
+          
+          # Test importów podstawowych pakietów
+          echo "🔍 Test importów kluczowych pakietów..."
+          python -c "
+          import sys
+          print(f'🐍 Python version: {sys.version}')
+          
+          packages_to_test = [
+              ('requests', 'requests'),
+              ('beautifulsoup4', 'bs4'),
+              ('selenium', 'selenium'),
+              ('lxml', 'lxml'),
+              ('python-dotenv', 'dotenv'),
+              ('pandas', 'pandas'),
+              ('mysql.connector', 'mysql.connector'),
+              ('pymysql', 'pymysql')
+          ]
+          
+          failed_imports = []
+          for package_name, import_name in packages_to_test:
+              try:
+                  __import__(import_name)
+                  print(f'✅ {package_name}: OK')
+              except ImportError as e:
+                  print(f'❌ {package_name}: FAILED - {e}')
+                  failed_imports.append(package_name)
+              except Exception as e:
+                  print(f'❌ {package_name}: ERROR - {e}')
+                  failed_imports.append(package_name)
+          
+          if failed_imports:
+              print(f'💥 Błędne importy: {failed_imports}')
+              exit(1)
+          else:
+              print('✅ Wszystkie kluczowe pakiety zainstalowane poprawnie!')
+          "
+          
+          # Zainstaluj pozostałe zależności z requirements.txt
+          echo "🔧 Instalowanie pozostałych zależności z requirements.txt..."
+          for i in {1..3}; do
+            if pip install -r requirements.txt; then
+              echo "✅ Pozostałe zależności zainstalowane pomyślnie"
+              break
+            else
+              echo "❌ Próba $i instalacji requirements.txt nie powiodła się, ponawianie..."
+              sleep 5
+            fi
+          done
+          
+          # Final test wszystkich pakietów
+          echo "📦 Finalne sprawdzenie wszystkich zainstalowanych pakietów:"
+          pip list
+          
+          echo ""
+          echo "🔍 Ostatni test importów przed uruchomieniem scrapera:"
+          python -c "
+          print('Testing final imports...')
+          try:
+              import requests
+              import bs4
+              import selenium
+              import mysql.connector
+              import pymysql
+              import pandas
+              import dotenv
+              print('✅ Wszystkie importy działają poprawnie!')
+          except Exception as e:
+              print(f'❌ Błąd finalnego testu: {e}')
+              exit(1)
+          "
+          
+      - name: 🔧 Przygotuj plik środowiska
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          cat > .env << EOF
+          MYSQL_HOST=${MYSQL_HOST}
+          MYSQL_PORT=${MYSQL_PORT}
+          MYSQL_USER=${MYSQL_USER}
+          MYSQL_PASSWORD=${MYSQL_PASSWORD}
+          MYSQL_DATABASE=${MYSQL_DATABASE}
+          
+          SCRAPER_DELAY_MIN=2
+          SCRAPER_DELAY_MAX=5
+          MAX_RETRIES=3
+          USE_HEADLESS=true
+          
+          LOG_LEVEL=INFO
+          LOG_TO_FILE=true
+          LOG_FILE=scraper.log
+          
+          ENABLE_GEOCODING=true
+          ENABLE_RATE_LIMITING=true
+          MAX_PAGES_PER_SESSION=20
+          ROTATE_USER_AGENTS=true
+          EOF
+          echo "✅ Plik .env utworzony pomyślnie"
+          
+      - name: 🧪 Test połączenia z bazą danych
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          python3 -c "
+          import os
+          import sys
+          
+          print('🔍 Test połączenia z bazą MySQL...')
+          print(f'🏢 Host: {os.environ.get(\"MYSQL_HOST\", \"not_set\")}')
+          print(f'🔌 Port: {os.environ.get(\"MYSQL_PORT\", \"not_set\")}')
+          print(f'👤 User: {os.environ.get(\"MYSQL_USER\", \"not_set\")}')
+          print(f'🗄️ Database: {os.environ.get(\"MYSQL_DATABASE\", \"not_set\")}')
+          
+          # Spróbuj różne connektory MySQL
+          connection_successful = False
+          
+          # Pierwsza próba: mysql.connector
+          try:
+              import mysql.connector
+              print('📦 Używam mysql.connector...')
+              
+              conn = mysql.connector.connect(
+                  host=os.environ['MYSQL_HOST'],
+                  port=int(os.environ['MYSQL_PORT']),
+                  user=os.environ['MYSQL_USER'],
+                  password=os.environ['MYSQL_PASSWORD'],
+                  database=os.environ['MYSQL_DATABASE']
+              )
+              print('✅ Połączenie z MySQL: OK (mysql.connector)')
+              connection_successful = True
+              
+          except ImportError:
+              print('❌ mysql.connector nie jest dostępny')
+          except Exception as e:
+              print(f'❌ Błąd mysql.connector: {e}')
+          
+          # Druga próba: PyMySQL jako backup
+          if not connection_successful:
+              try:
+                  import pymysql
+                  print('📦 Używam PyMySQL jako backup...')
+                  
+                  conn = pymysql.connect(
+                      host=os.environ['MYSQL_HOST'],
+                      port=int(os.environ['MYSQL_PORT']),
+                      user=os.environ['MYSQL_USER'],
+                      password=os.environ['MYSQL_PASSWORD'],
+                      database=os.environ['MYSQL_DATABASE']
+                  )
+                  print('✅ Połączenie z MySQL: OK (PyMySQL)')
+                  connection_successful = True
+                  
+              except ImportError:
+                  print('❌ PyMySQL nie jest dostępny')
+              except Exception as e:
+                  print(f'❌ Błąd PyMySQL: {e}')
+          
+          if connection_successful:
+              cursor = conn.cursor()
+              cursor.execute('SELECT VERSION()')
+              version = cursor.fetchone()[0]
+              print(f'📊 MySQL version: {version}')
+              
+              # Test tabeli
+              cursor.execute(\"SHOW TABLES LIKE 'nieruchomosci'\")
+              result = cursor.fetchone()
+              table_exists = result is not None
+              if table_exists:
+                  print('✅ Tabela nieruchomosci: EXISTS')
+              else:
+                  print('⚠️ Tabela nieruchomosci: NOT FOUND')
+              
+              conn.close()
+          else:
+              print('❌ Nie udało się połączyć z bazą danych żadnym connektorem')
+              
+              # Sprawdź dostępne pakiety
+              import pkg_resources
+              installed_packages = [d.project_name for d in pkg_resources.working_set]
+              mysql_packages = [p for p in installed_packages if 'mysql' in p.lower()]
+              print(f'📦 Zainstalowane pakiety MySQL: {mysql_packages}')
+              
+              exit(1)
+          "
+          
+      - name: 🔍 Uruchom scraper
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          echo "📁 Katalog roboczy przed zmianą: $(pwd)"
+          echo "🔍 Git information:"
+          echo "   SHA: $(git rev-parse HEAD)"
+          echo "   Branch: $(git branch --show-current)"
+          echo "   Remote: $(git remote get-url origin)"
+          
+          echo ""
+          echo "📋 Zawartość katalogu scripts:"
+          ls -la scripts/ || echo "❌ Brak katalogu scripts"
+          
+          echo ""
+          echo "📂 Debug: Sprawdzenie drzewa git dla scripts:"
+          git ls-tree HEAD scripts/ || echo "❌ Brak scripts/ w git tree"
+          
+          # Sprawdź czy scraper_main.py istnieje
+          if [ -f "scripts/scraper_main.py" ]; then
+            echo "✅ Znaleziono scripts/scraper_main.py"
+          else
+            echo "❌ Nie znaleziono scripts/scraper_main.py"
+            echo "📁 Zawartość głównego katalogu:"
+            ls -la
+            echo ""
+            echo "🔍 Sprawdzanie wszystkich plików Python:"
+            find . -name "*.py" -type f | head -20
+            echo ""
+            echo "🔍 Sprawdzanie czy scripts/ jest w .gitignore:"
+            if [ -f .gitignore ]; then
+              grep -n scripts .gitignore || echo "❌ scripts nie jest w .gitignore"
+            else
+              echo "❌ Brak .gitignore"
+            fi
+            exit 1
+          fi
+          
+          cd scripts
+          echo "📁 Zmieniono katalog na: $(pwd)"
+          
+          # Final test importów w kontekście scrapera
+          echo "🔍 Test importów w katalogu scripts przed uruchomieniem:"
+          python -c "
+          import sys
+          import os
+          
+          # Dodaj główny katalog do path
+          sys.path.insert(0, os.path.dirname(os.getcwd()))
+          
+          print(f'Python path: {sys.path[:3]}...')
+          
+          try:
+              import requests
+              print('✅ requests: OK')
+          except Exception as e:
+              print(f'❌ requests: {e}')
+              
+          try:
+              import bs4
+              print('✅ beautifulsoup4: OK')
+          except Exception as e:
+              print(f'❌ beautifulsoup4: {e}')
+              
+          try:
+              import selenium
+              print('✅ selenium: OK')
+          except Exception as e:
+              print(f'❌ selenium: {e}')
+              
+          try:
+              import mysql.connector
+              print('✅ mysql.connector: OK')
+          except Exception as e:
+              print(f'❌ mysql.connector: {e}')
+              
+          try:
+              from utils import get_soup
+              print('✅ utils.get_soup: OK')
+          except Exception as e:
+              print(f'❌ utils.get_soup: {e}')
+              
+          try:
+              from src.scrapers.otodom_scraper import get_otodom_listings
+              print('✅ otodom_scraper: OK')
+          except Exception as e:
+              print(f'❌ otodom_scraper: {e}')
+          "
+          
+          # Przygotuj parametry na podstawie inputów
+          PARAMS=""
+          
+          # Użyj domyślnych wartości jeśli input nie został podany
+          MAX_PAGES="${{ github.event.inputs.max_pages || '5' }}"
+          BATCH_SIZE="${{ github.event.inputs.batch_size || '100' }}"
+          
+          PARAMS="--pages ${MAX_PAGES} --batch-size ${BATCH_SIZE}"
+          
+          if [ "${{ github.event.inputs.scraping_only }}" == "true" ]; then
+            PARAMS="$PARAMS --scraping-only"
+          fi
+          
+          if [ "${{ github.event.inputs.no_details }}" == "true" ]; then
+            PARAMS="$PARAMS --no-details"
+          fi
+          
+          echo "🚀 Uruchamiam scraper z parametrami: $PARAMS"
+          echo "🐍 Python version: $(python --version)"
+          echo "⚙️ Environment check:"
+          echo "   MYSQL_HOST: ${MYSQL_HOST:-'not_set'}"
+          echo "   MYSQL_DATABASE: ${MYSQL_DATABASE:-'not_set'}"
+          
+          # Test importów przed uruchomieniem
+          echo "🔍 Final import test przed uruchomieniem scrapera:"
+          python -c "
+          try:
+              import requests
+              print('✅ requests: OK')
+          except ImportError as e:
+              print(f'❌ requests: FAILED - {e}')
+              exit(1)
+              
+          try:
+              from src.scrapers.otodom_scraper import get_otodom_listings
+              print('✅ otodom_scraper: OK')
+          except ImportError as e:
+              print(f'❌ otodom_scraper: FAILED - {e}')
+              exit(1)
+              
+          print('✅ Wszystkie importy działają poprawnie')
+          "
+          
+          python scraper_main.py $PARAMS
+          
+      - name: 📊 Pokaż statystyki końcowe
+        if: always()
+        env:
+          MYSQL_HOST: ${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT: ${{ secrets.MYSQL_PORT }}
+          MYSQL_USER: ${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD: ${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE: ${{ secrets.MYSQL_DATABASE }}
+        run: |
+          python3 -c "
+          import os
+          
+          print('🔍 Pobieranie statystyk końcowych...')
+          
+          # Spróbuj różne connektory MySQL
+          connection_successful = False
+          
+          # Pierwsza próba: mysql.connector
+          try:
+              import mysql.connector
+              print('📦 Używam mysql.connector...')
+              
+              conn = mysql.connector.connect(
+                  host=os.environ['MYSQL_HOST'],
+                  port=int(os.environ['MYSQL_PORT']),
+                  user=os.environ['MYSQL_USER'],
+                  password=os.environ['MYSQL_PASSWORD'],
+                  database=os.environ['MYSQL_DATABASE']
+              )
+              print('✅ Połączenie z MySQL: OK (mysql.connector)')
+              connection_successful = True
+              
+          except ImportError:
+              print('❌ mysql.connector nie jest dostępny')
+          except Exception as e:
+              print(f'❌ Błąd mysql.connector: {e}')
+          
+          # Druga próba: PyMySQL jako backup
+          if not connection_successful:
+              try:
+                  import pymysql
+                  print('📦 Używam PyMySQL jako backup...')
+                  
+                  conn = pymysql.connect(
+                      host=os.environ['MYSQL_HOST'],
+                      port=int(os.environ['MYSQL_PORT']),
+                      user=os.environ['MYSQL_USER'],
+                      password=os.environ['MYSQL_PASSWORD'],
+                      database=os.environ['MYSQL_DATABASE']
+                  )
+                  print('✅ Połączenie z MySQL: OK (PyMySQL)')
+                  connection_successful = True
+                  
+              except ImportError:
+                  print('❌ PyMySQL nie jest dostępny')
+              except Exception as e:
+                  print(f'❌ Błąd PyMySQL: {e}')
+          
+          if connection_successful:
+              cursor = conn.cursor()
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci')
+              total = cursor.fetchone()[0]
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)')
+              today = cursor.fetchone()[0]
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)')
+              last_hour = cursor.fetchone()[0]
+              
+              # Dodatkowe statystyki
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE price IS NOT NULL')
+              with_price = cursor.fetchone()[0]
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE latitude IS NOT NULL')
+              geocoded = cursor.fetchone()[0]
+              
+              print(f'📊 Łącznie w bazie: {total:,} ogłoszeń')
+              print(f'🆕 Dodane dzisiaj: {today:,} ogłoszeń')
+              print(f'⏰ Ostatnia godzina: {last_hour:,} ogłoszeń')
+              print(f'💰 Z cenami: {with_price:,} ogłoszeń ({with_price/max(total,1)*100:.1f}%)')
+              print(f'🌍 Geocoded: {geocoded:,} ogłoszeń ({geocoded/max(total,1)*100:.1f}%)')
+              
+              conn.close()
+          else:
+              print('❌ Nie udało się połączyć z bazą danych - statystyki niedostępne')
+              print('ℹ️ Może to być oczekiwane jeśli scraper się nie udał lub baza jest niedostępna')
+          "
+          
+      - name: 📋 Upload logów
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scraper-logs-${{ github.run_number }}
+          path: |
+            scraper.log
+            scripts/scraper.log
+          retention-days: 7
+          
+      - name: 💬 Powiadomienie o błędzie (Slack/Discord)
+        if: failure()
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          if [ -n "$WEBHOOK_URL" ]; then
+            echo "📢 Wysyłam powiadomienie o błędzie..."
+            curl -X POST $WEBHOOK_URL \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "❌ Scraper nieruchomości: Błąd podczas wykonania\n🔗 Link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }'
+          else
+            echo "ℹ️ Brak konfiguracji WEBHOOK_URL - pomijam powiadomienie"
+          fi
+            
+  notify-success:
+    name: 📢 Powiadomienie o sukcesie
+    needs: scraper
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    if: success()
+    
+    env:
+      PYTHONUNBUFFERED: 1
+    
+    steps:
+      - name: 📥 Checkout kodu
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Zainstaluj MySQL connector
+        run: |
+          pip install mysql-connector-python PyMySQL python-dotenv
+        
+      - name: 📊 Pobierz statystyki
+        id: stats
+        run: |
+          cat > get_stats.py << 'EOF'
+          import os
+          from datetime import datetime
+          
+          # Debug informacje
+          print("🔍 Próba połączenia z bazą danych...")
+          
+          # Spróbuj różne connektory MySQL
+          connection_successful = False
+          conn = None
+          
+          # Pierwsza próba: mysql.connector
+          try:
+              import mysql.connector
+              print('📦 Używam mysql.connector...')
+              
+              conn = mysql.connector.connect(
+                  host='${{ secrets.MYSQL_HOST }}',
+                  port=int('${{ secrets.MYSQL_PORT }}'),
+                  user='${{ secrets.MYSQL_USER }}',
+                  password='${{ secrets.MYSQL_PASSWORD }}',
+                  database='${{ secrets.MYSQL_DATABASE }}'
+              )
+              print("✅ Połączenie z MySQL: OK (mysql.connector)")
+              connection_successful = True
+              
+          except ImportError:
+              print('❌ mysql.connector nie jest dostępny')
+          except Exception as e:
+              print(f'❌ Błąd mysql.connector: {e}')
+          
+          # Druga próba: PyMySQL jako backup
+          if not connection_successful:
+              try:
+                  import pymysql
+                  print('📦 Używam PyMySQL jako backup...')
+                  
+                  conn = pymysql.connect(
+                      host='${{ secrets.MYSQL_HOST }}',
+                      port=int('${{ secrets.MYSQL_PORT }}'),
+                      user='${{ secrets.MYSQL_USER }}',
+                      password='${{ secrets.MYSQL_PASSWORD }}',
+                      database='${{ secrets.MYSQL_DATABASE }}'
+                  )
+                  print("✅ Połączenie z MySQL: OK (PyMySQL)")
+                  connection_successful = True
+                  
+              except ImportError:
+                  print('❌ PyMySQL nie jest dostępny')
+              except Exception as e:
+                  print(f'❌ Błąd PyMySQL: {e}')
+          
+          if connection_successful:
+              try:
+                  cursor = conn.cursor()
+              
+              # Statystyki podstawowe
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci')
+              total = cursor.fetchone()[0]
+              print(f"📊 Pobrałem total: {total}")
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE created_at >= DATE_SUB(NOW(), INTERVAL 1 DAY)')
+              today = cursor.fetchone()[0]
+              print(f"📊 Pobrałem today: {today}")
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE updated_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR)')
+              last_hour = cursor.fetchone()[0]
+              print(f"📊 Pobrałem last_hour: {last_hour}")
+              
+              # Statystyki jakości danych
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE price IS NOT NULL')
+              with_price = cursor.fetchone()[0]
+              print(f"📊 Pobrałem with_price: {with_price}")
+              
+              cursor.execute('SELECT COUNT(*) FROM nieruchomosci WHERE latitude IS NOT NULL')
+              geocoded = cursor.fetchone()[0]
+              print(f"📊 Pobrałem geocoded: {geocoded}")
+              
+              # Outputs dla GitHub Actions
+              print(f"TOTAL={total}")
+              print(f"TODAY={today}")
+              print(f"LAST_HOUR={last_hour}")
+              print(f"WITH_PRICE={with_price}")
+              print(f"GEOCODED={geocoded}")
+              
+                  conn.close()
+                  print("✅ Statystyki pobrane pomyślnie")
+                  
+              except Exception as e:
+                  print(f"❌ Błąd podczas pobierania statystyk: {e}")
+                  if conn:
+                      conn.close()
+                  # Domyślne wartości w przypadku błędu
+                  print("TOTAL=0")
+                  print("TODAY=0") 
+                  print("LAST_HOUR=0")
+                  print("WITH_PRICE=0")
+                  print("GEOCODED=0")
+                  print(f"ERROR={e}")
+          else:
+              print("❌ Nie udało się połączyć z bazą danych")
+              # Domyślne wartości w przypadku błędu połączenia
+              print("TOTAL=0")
+              print("TODAY=0") 
+              print("LAST_HOUR=0")
+              print("WITH_PRICE=0")
+              print("GEOCODED=0")
+              print("ERROR=Connection failed")
+          EOF
+          
+          echo "🚀 Uruchamiam skrypt pobierania statystyk..."
+          python get_stats.py >> $GITHUB_OUTPUT
+          
+      - name: 💬 Wyślij powiadomienie o sukcesie
+        env:
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        run: |
+          if [ -n "$WEBHOOK_URL" ]; then
+            echo "📢 Wysyłam powiadomienie o sukcesie..."
+            curl -X POST $WEBHOOK_URL \
+              -H 'Content-Type: application/json' \
+              -d '{
+                "text": "✅ Scraper nieruchomości: Zakończony pomyślnie\n📊 Łącznie: ${{ steps.stats.outputs.TOTAL }} ogłoszeń\n🆕 Dodane dzisiaj: ${{ steps.stats.outputs.TODAY }}\n⏰ Ostatnia godzina: ${{ steps.stats.outputs.LAST_HOUR }}\n💰 Z cenami: ${{ steps.stats.outputs.WITH_PRICE }}\n🌍 Geocoded: ${{ steps.stats.outputs.GEOCODED }}\n🔗 Szczegóły: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+              }'
+          else
+            echo "ℹ️ Brak konfiguracji WEBHOOK_URL - pomijam powiadomienie"
+          fi

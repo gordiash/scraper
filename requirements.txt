@@ -1,0 +1,81 @@
+# =====================================================
+# SCRAPER NIERUCHOMOŚCI - ZALEŻNOŚCI PYTHON
+# Zainstaluj: pip install -r requirements.txt
+# =====================================================
+
+# Scraping i automatyzacja przeglądarki
+selenium==4.16.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+requests==2.31.0
+webdriver-manager==4.0.1
+
+# Baza danych MySQL
+mysql-connector-python==8.2.0
+PyMySQL==1.1.0
+
+# Konfiguracja środowiska
+python-dotenv==1.0.0
+
+# Parsowanie i walidacja danych
+dateparser==1.2.0
+phonenumbers==8.13.26
+validators==0.22.0
+
+# Geocoding (opcjonalne)
+googlemaps==4.10.0
+geopy==2.4.1
+
+# Narzędzia pomocnicze
+pandas==2.1.4
+numpy==1.25.2
+fake-useragent==1.4.0
+
+# Logowanie i monitoring
+colorlog==6.8.0
+
+# HTTP i sieć
+urllib3==2.1.0
+certifi==2023.11.17
+
+# Przetwarzanie tekstu
+unidecode==1.3.7
+fuzzywuzzy==0.18.0
+python-Levenshtein==0.23.0
+
+# Format danych
+jsonschema==4.20.0
+
+# Powiadomienia email (opcjonalne)
+smtplib2==0.2.1
+
+# Interfejs użytkownika (opcjonalne)
+click==8.1.7
+rich==13.7.0
+tqdm==4.66.1
+
+# Testowanie (opcjonalne)
+pytest==7.4.3
+pytest-mock==3.12.0
+
+# Bezpieczeństwo
+cryptography==41.0.8
+
+# Harmonogram zadań (opcjonalne)
+schedule==1.2.1
+
+# Kompresja i archiwizacja
+zipfile-deflate64==0.2.0
+
+# =====================================================
+# INSTALACJA:
+# 
+# Podstawowa:
+# pip install selenium beautifulsoup4 mysql-connector-python python-dotenv requests lxml
+# 
+# Kompletna:
+# pip install -r requirements.txt
+# 
+# Tylko scraping (bez bazy danych):
+# pip install selenium beautifulsoup4 requests lxml python-dotenv
+# ===================================================== 

@@ -1,0 +1,189 @@
+name: 🧪 Test Połączenia z Bazą
+
+on:
+  workflow_dispatch:
+    inputs:
+      debug_level:
+        description: 'Poziom debugowania'
+        required: false
+        default: 'basic'
+        type: choice
+        options:
+          - basic
+          - detailed
+          - full
+
+jobs:
+  test-connection:
+    name: 🔗 Test MySQL Connection
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    steps:
+      - name: 📥 Checkout kodu
+        uses: actions/checkout@v4
+        
+      - name: 🐍 Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          
+      - name: 📦 Zainstaluj podstawowe zależności
+        run: |
+          python -m pip install --upgrade pip
+          pip install mysql-connector-python python-dotenv
+          
+      - name: 🔧 Sprawdź środowisko
+        run: |
+          echo "📁 Katalog roboczy: $(pwd)"
+          echo "🐍 Python version: $(python --version)"
+          echo "📋 Zawartość głównego katalogu:"
+          ls -la
+          echo ""
+          echo "📋 Pliki .py w głównym katalogu:"
+          ls -la *.py || echo "Brak plików .py"
+          
+      - name: 🔧 Przygotuj plik środowiska
+        run: |
+          cat > .env << EOF
+          MYSQL_HOST=${{ secrets.MYSQL_HOST }}
+          MYSQL_PORT=${{ secrets.MYSQL_PORT }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          EOF
+          echo "✅ Plik .env utworzony"
+          
+      - name: 🧪 Test podstawowy - bezpośrednie połączenie
+        run: |
+          python3 -c "
+          import mysql.connector
+          import os
+          
+          print('🔍 Test bezpośredniego połączenia MySQL...')
+          
+          try:
+              conn = mysql.connector.connect(
+                  host='${{ secrets.MYSQL_HOST }}',
+                  port=int('${{ secrets.MYSQL_PORT }}'),
+                  user='${{ secrets.MYSQL_USER }}',
+                  password='${{ secrets.MYSQL_PASSWORD }}',
+                  database='${{ secrets.MYSQL_DATABASE }}'
+              )
+              print('✅ Bezpośrednie połączenie: OK')
+              
+              cursor = conn.cursor()
+              cursor.execute('SELECT VERSION()')
+              version = cursor.fetchone()[0]
+              print(f'📊 MySQL version: {version}')
+              
+              cursor.execute('SELECT DATABASE()')
+              db_name = cursor.fetchone()[0]
+              print(f'📊 Database: {db_name}')
+              
+              conn.close()
+              
+          except Exception as e:
+              print(f'❌ Błąd bezpośredniego połączenia: {e}')
+              exit(1)
+          "
+          
+      - name: 🧪 Test przez mysql_utils (jeśli istnieje)
+        run: |
+          python3 -c "
+          import sys
+          import os
+          
+          # Dodaj główny katalog do ścieżki Python
+          sys.path.insert(0, os.getcwd())
+          
+          print('🔍 Test połączenia przez mysql_utils...')
+          print(f'📁 Python path: {sys.path[0]}')
+          
+          # Sprawdź czy plik istnieje
+          if os.path.exists('mysql_utils.py'):
+              print('✅ Plik mysql_utils.py istnieje')
+          else:
+              print('❌ Plik mysql_utils.py nie istnieje')
+              print('📋 Pliki .py w katalogu:')
+              for f in os.listdir('.'):
+                  if f.endswith('.py'):
+                      print(f'   {f}')
+              exit(1)
+          
+          try:
+              from mysql_utils import get_mysql_connection
+              print('✅ Import mysql_utils: OK')
+              
+              conn = get_mysql_connection()
+              print('✅ Połączenie przez mysql_utils: OK')
+              conn.close()
+              
+          except ImportError as e:
+              print(f'❌ Błąd importu: {e}')
+              exit(1)
+          except Exception as e:
+              print(f'❌ Błąd połączenia: {e}')
+              exit(1)
+          "
+          
+      - name: 🔍 Test tabeli nieruchomosci
+        if: github.event.inputs.debug_level == 'detailed' || github.event.inputs.debug_level == 'full'
+        run: |
+          python3 -c "
+          import mysql.connector
+          
+          print('🔍 Test tabeli nieruchomosci...')
+          
+          try:
+              conn = mysql.connector.connect(
+                  host='${{ secrets.MYSQL_HOST }}',
+                  port=int('${{ secrets.MYSQL_PORT }}'),
+                  user='${{ secrets.MYSQL_USER }}',
+                  password='${{ secrets.MYSQL_PASSWORD }}',
+                  database='${{ secrets.MYSQL_DATABASE }}'
+              )
+              cursor = conn.cursor()
+              
+              # Sprawdź czy tabela istnieje
+              cursor.execute(\"SHOW TABLES LIKE 'nieruchomosci'\")
+              table_exists = cursor.fetchone() is not None
+              
+              if table_exists:
+                  print('✅ Tabela nieruchomosci istnieje')
+                  
+                  cursor.execute('SELECT COUNT(*) FROM nieruchomosci')
+                  count = cursor.fetchone()[0]
+                  print(f'📊 Rekordów w tabeli: {count:,}')
+                  
+                  # Sprawdź strukturę tabeli
+                  cursor.execute('DESCRIBE nieruchomosci')
+                  columns = cursor.fetchall()
+                  print(f'📋 Kolumn w tabeli: {len(columns)}')
+                  
+                  if '${{ github.event.inputs.debug_level }}' == 'full':
+                      print('📋 Struktura tabeli:')
+                      for col in columns[:10]:  # Pokaż pierwszych 10 kolumn
+                          print(f'   {col[0]} - {col[1]}')
+                      if len(columns) > 10:
+                          print(f'   ... i {len(columns) - 10} więcej')
+              else:
+                  print('❌ Tabela nieruchomosci nie istnieje')
+                  print('📋 Dostępne tabele:')
+                  cursor.execute('SHOW TABLES')
+                  tables = cursor.fetchall()
+                  for table in tables:
+                      print(f'   {table[0]}')
+              
+              conn.close()
+              
+          except Exception as e:
+              print(f'❌ Błąd sprawdzania tabeli: {e}')
+          "
+          
+      - name: 🎉 Podsumowanie
+        if: always()
+        run: |
+          echo "✅ Test połączenia zakończony"
+          echo "💡 Jeśli wszystko przeszło pomyślnie, główny workflow powinien działać"
+          echo "🔗 Możesz teraz uruchomić główny scraper workflow" 
