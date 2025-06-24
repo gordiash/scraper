@@ -40,7 +40,7 @@ logger = logging.getLogger(__name__)
 _progress_lock = threading.Lock()
 _progress_counter = {"current": 0, "total": 0}
 
-DEFAULT_BASE_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/wielkopolskie/poznan/poznan/poznan"
+DEFAULT_BASE_URL = "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie/cala-polska"
 
 def scrape_listing_details_thread_safe(listing_data: Dict, enable_geocoding: bool = False) -> Dict:
     """
